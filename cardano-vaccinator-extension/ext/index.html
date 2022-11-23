@@ -1,0 +1,96 @@
+<html style="height: 400px; width: 600px">
+<script src="../libs/qrcode.js" type="text/javascript"></script>
+    <head>
+        <link rel="stylesheet" href="../libs/bootstrap-5.1.1-dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="style.css">
+    </head>
+
+    
+    <body style="height: 400px; width: 600px; background-color: F8F8F8;">
+            <h3 class="py-3" style="text-align: center;">Cardano Vaccinator Helper</h3>
+            
+            <div class="d-flex justify-content-center">
+              <div id="qrcode"></div>
+            </div>
+
+            <div class="d-flex justify-content-center">
+  <tr>
+    <th><button class="m-2 btn btn-sm btn-primary" id="create-did">Create DID</button></th>
+    <th><button class="m-2 btn btn-sm btn-primary" id="upload-keys">Upload Keys</button></th>
+  </tr>
+</div>
+            
+                <table class="table table-borderless">
+                    <thead>
+                      <tr>
+                        <th class="text-start">Authentication</th>
+                        <th class="text-end">
+                            <button class="btn btn-outline-danger btn-sm" id="reset-fields">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
+                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                  </svg>
+                            </button>
+                        </th>
+                      </tr>
+                    </thead>
+                  </table>
+
+                <div class="input-group input-group-sm px-2 mb-2">
+                    <span class="input-group-text" id="inputGroup-sizing-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+                            <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                            <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                          </svg>
+                    </span>
+                    <input type="text" id="did" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                </div>
+
+                <div class="input-group input-group-sm px-2 mb-2">
+                    <span class="input-group-text" id="inputGroup-sizing-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-key" viewBox="0 0 16 16">
+                            <path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 8 10h-.535A4 4 0 0 1 0 8zm4-3a3 3 0 1 0 2.712 4.285A.5.5 0 0 1 7.163 9h.63l.853-.854a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.793-.793-1-1h-6.63a.5.5 0 0 1-.451-.285A3 3 0 0 0 4 5z"/>
+                            <path d="M4 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                          </svg>
+                    </span>
+                    <input type="password" id="keyhex" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                    <input type="password" id="keyhex2" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                </div>
+
+                <hr/>
+                <div class="d-flex justify-content-center">
+                <button class="btn btn-primary m-2" id="auto-fill">Login</button>
+                <button class="btn btn-primary m-2" id="auth">Reload</button>
+                
+                <a class="btn btn-primary m-2" id="auth" href="/index2.html">Receive VC</a>
+                <a class="btn btn-primary m-2" id="auth" href="/index3.html">Send VP</a>
+                </div>
+
+
+                <hr/>
+                <table id="verifiableCredentialsBlockchain" class="table table-borderless">
+                    <thead>
+                        <th class="text-start">Verifiable Credentials on Blockchain</th>
+                    </thead>
+                  </table>
+
+ <!--                  <table id="verifiablePresentations" class="table table-borderless">
+                     <thead>
+                         <th class="text-start">Verifiable Presentations</th>
+                    </thead>
+                 </table>
+-->
+
+                  <table id="verifiableCredentials" class="table table-borderless">
+                    <thead>
+                        <th class="text-start">Verifiable Credentials in wallet</th>
+                    </thead>
+                  </table>
+
+    </body>
+
+    <!-- <script src="../libs/bn.js" type="text/javascript"></script> -->
+    <!-- <script src="../libs/secp256k1.js" type="text/javascript"></script> -->
+    <script src="../queries.js"></script>
+    <script src="../utils.js"></script>
+    <script src="script.js"></script>
+</html>

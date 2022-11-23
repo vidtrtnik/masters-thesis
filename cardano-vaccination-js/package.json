@@ -1,0 +1,50 @@
+{
+  "dependencies": {
+    "@decentralized-identity/ion-sdk": "^0.5.0",
+    "@transmute/did-key-secp256k1": "^0.3.0-unstable.8",
+    "@transmute/did-key-web-crypto": "^0.3.0-unstable.9",
+    "@transmute/json-web-signature": "^0.7.0-unstable.64",
+    "axios": "^0.27.2",
+    "bcrypt": "^5.1.0",
+    "canvas": "^2.10.2",
+    "cardano-wallet-js": "^1.4.0",
+    "cardanocli-js": "^4.0.1",
+    "colors": "^1.4.0",
+    "cors": "^2.8.5",
+    "did-jwt": "^6.2.1",
+    "did-jwt-vc": "^2.1.13",
+    "eciesjs": "^0.3.15",
+    "express": "^4.18.1",
+    "express-graphql": "^0.12.0",
+    "fs": "^0.0.1-security",
+    "graphql": "^15.8.0",
+    "ion-sdk": "^0.11.9",
+    "ipfs-http-client": "^56.0.3",
+    "js-crypto-key-utils": "^1.0.4",
+    "jsonwebtoken": "^8.5.1",
+    "jwt-decode": "^3.1.2",
+    "mongoose": "^6.5.0",
+    "qrcode": "^1.5.1",
+    "randombytes": "^2.1.0",
+    "request": "^2.88.2",
+    "secp256k1": "^4.0.3",
+    "tslib": "^2.4.0",
+    "util": "^0.12.4",
+    "vc-revocation-list": "^3.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.1",
+    "nodemon": "^2.0.19"
+  },
+  "name": "cardano-vaccination",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

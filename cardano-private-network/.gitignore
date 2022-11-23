@@ -1,0 +1,13 @@
+did-keys/
+did-keys_old/
+other/
+docker-composeCOMBINED.yml
+docker/cardano-faucet-frontend-docker.tar.gz
+docker/sidetree-cardano.tar.gz
+docker/cardano-sidetree-docker/sidetree-cardano.tar.gz
+docker/cardano-explorer-app-docker/cardano-explorer-app.tar.gz
+docker/cardano-faucet-docker/cardano-faucet.tar.gz
+docker/cardano-playground-docker/plutus-apps.tar.gz
+docker/other-tools/
+volumes/generated-config-tmp
+volumes/faucet.apikey-example

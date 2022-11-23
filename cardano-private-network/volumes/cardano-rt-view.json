@@ -1,0 +1,95 @@
+{
+    "rotation": null,
+    "defaultBackends": [
+        "KatipBK"
+    ],
+    "setupBackends": [
+        "KatipBK",
+        "LogBufferBK",
+        "TraceAcceptorBK"
+    ],
+    "hasPrometheus": null,
+    "hasGraylog": null,
+    "hasGUI": null,
+    "traceForwardTo": null,
+    "traceAcceptAt": [
+        {
+            "remoteAddr": {
+                "tag": "RemoteSocket",
+                "contents": [
+                    "0.0.0.0",
+                    "3331"
+                ]
+            },
+            "nodeName": "node-1"
+        },
+        {
+            "remoteAddr": {
+                "tag": "RemoteSocket",
+                "contents": [
+                    "0.0.0.0",
+                    "3332"
+                ]
+            },
+            "nodeName": "node-2"
+        },
+        {
+            "remoteAddr": {
+                "tag": "RemoteSocket",
+                "contents": [
+                    "0.0.0.0",
+                    "3333"
+                ]
+            },
+            "nodeName": "node-3"
+        }
+    ],
+    "defaultScribes": [
+        [
+            "StdoutSK",
+            "stdout"
+        ],
+        [
+            "FileSK",
+            "cardano-rt-view.log"
+        ]
+    ],
+    "options": {
+        "mapBackends": {
+            "cardano-rt-view.acceptor": [
+                "LogBufferBK",
+                {
+                    "kind": "UserDefinedBK",
+                    "name": "ErrorBufferBK"
+                }
+            ]
+        }
+    },
+    "setupScribes": [
+        {
+            "scMaxSev": "Emergency",
+            "scName": "stdout",
+            "scRotation": null,
+            "scMinSev": "Notice",
+            "scKind": "StdoutSK",
+            "scFormat": "ScText",
+            "scPrivacy": "ScPublic"
+        },
+        {
+            "scMaxSev": "Emergency",
+            "scName": "cardano-rt-view.log",
+            "scRotation": {
+                "rpLogLimitBytes": 50000,
+                "rpKeepFilesNum": 10,
+                "rpMaxAgeHours": 24
+            },
+            "scMinSev": "Debug",
+            "scKind": "FileSK",
+            "scFormat": "ScText",
+            "scPrivacy": "ScPublic"
+        }
+    ],
+    "hasEKG": null,
+    "forwardDelay": null,
+    "minSeverity": "Info"
+}

@@ -1,0 +1,572 @@
+version: "3.9"
+
+services:
+  autoheal:
+    image: willfarrell/autoheal
+    container_name: autoheal
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    environment:
+      - AUTOHEAL_INTERVAL=20
+      - CURL_TIMEOUT=30
+    restart: on-failure
+
+  mongo:
+    container_name: mongo
+    image: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/ --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    expose:
+      - "27017"
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+    restart: on-failure
+
+
+  mongo-express:
+    container_name: mongo-express
+    image: mongo-express
+    ports:
+      - 127.0.0.1:27080:8081
+    depends_on:
+      - mongo
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=example
+      - ME_CONFIG_MONGODB_URL=mongodb://root:example@mongo:27017/
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8081 2>&1 | grep Mongo 1>/dev/null || exit 1"]
+    restart: "always"
+
+  didcomm-server:
+    container_name: didcomm-server
+    build: ./docker/didcomm-server-docker
+    ports:
+      - 127.0.0.1:2222:2222
+    environment:
+      - DIDCOMM_SERVER_PORT=2222
+    restart: on-failure 
+      
+  cardano-ogmios1:
+    container_name: cardano-ogmios1
+    image: cardanosolutions/ogmios:v5.1.0
+    command: [
+      "--host", "0.0.0.0",
+      "--node-socket", "/ipc/node.socket",
+      "--node-config", "/config/configuration1.yaml"
+    ]
+    depends_on:
+      - "cardano-node1"
+    volumes:
+      - node1-db:/db
+      - node1-ipc:/ipc
+      - ./volumes/config:/config
+    ports:
+      - 127.0.0.1:1337:1337
+    restart: on-failure
+
+  cardano-db-sync-extended:
+    container_name: cardano-db-sync-extended
+    # image: inputoutput/cardano-db-sync:master # !!! NOT ANYMORE !!!
+    # inputoutput/cardano-db-sync                        master            7dbedf140fa9   2 months ago     927MB
+    # inputoutput/cardano-db-sync                        pulsing-rewards   7dbedf140fa9   2 months ago     927MB
+    image: inputoutput/cardano-db-sync:pulsing-rewards # !!!
+    command: [
+      "--config", "/config/configurationDB.yaml",
+      "--socket-path", "/node-ipc/node.socket"
+    ]
+    #build: ./docker/cardano-db-sync-docker
+    environment:
+      - EXTENDED=true
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - RESTORE_SNAPSHOT=${RESTORE_SNAPSHOT:-}
+      - RESTORE_RECREATE_DB=N
+      - PGPASSFILE=/cardano-db-sync/pgpass
+    secrets:
+      - postgres_password
+      - postgres_user
+      - postgres_db
+    depends_on:
+      - cardano-node1
+      - postgres
+    volumes:
+      - ./volumes/config:/config
+      - db-sync-data:/var/lib/cdbsync
+      - db-sync-tmp:/tmp
+      - node1-ipc:/node-ipc
+    healthcheck:
+      test: ["CMD-SHELL", 'if [[ -z "$$(ls -A /var/lib/cexplorer)" ]]; then exit 1; fi']
+    restart: on-failure
+
+
+  cardano-graphql-hasura:
+    container_name: cardano-graphql-hasura
+    image: inputoutput/cardano-graphql-hasura:6.2.0
+    ports:
+      - 127.0.0.1:8899:8080
+    depends_on:
+      - postgres
+    environment:
+      - HASURA_GRAPHQL_ENABLE_TELEMETRY=false
+      - HASURA_GRAPHQL_ENABLE_CONSOLE=true
+      - HASURA_GRAPHQL_CONSOLE_ASSETS_DIR=/srv/console-assets
+      - HASURA_GRAPHQL_CORS_DOMAIN=*
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080 2>&1 | grep console || exit 1"]
+    secrets:
+      - postgres_db
+      - postgres_password
+      - postgres_user
+    restart: on-failure
+
+  cardano-graphql:
+    container_name: cardano-graphql
+    image: inputoutput/cardano-graphql:6.2.0
+    environment:
+#      - CARDANO_NODE_CONFIG_PATH=/config/configuration1.yaml
+      - HASURA_URI=http://cardano-graphql-hasura:8080
+      - OGMIOS_HOST=cardano-ogmios1
+      - OGMIOS_PORT=1337
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB_FILE=/run/secrets/postgres_db
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - ALLOW_INTROSPECTION=true
+      - CACHE_ENABLED=true
+      - LOGGER_MIN_SEVERITY=${LOGGER_MIN_SEVERITY:-trace}
+      - PROMETHEUS_METRICS=true
+      #- PROMETHEUS_PORT=9090
+      - TRACING=true
+      - GENESIS_FILE_BYRON=/config-vol/byron/genesis.json
+      - GENESIS_FILE_SHELLEY=/config-vol/shelley/genesis.json
+    ports:
+      - 127.0.0.1:11032:3100
+      #- 127.0.0.1:9090:9090
+    secrets:
+      - postgres_db
+      - postgres_password
+      - postgres_user
+    volumes:
+      - ./volumes/config:/config-vol
+      - ./volumes/up-fix.sql:/app/packages/api-cardano-db-hasura/hasura/project/migrations/1589369664961_init/up.sql
+    labels:
+      "autoheal": "true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f 127.0.0.1:3100/metrics || exit 1"]
+      interval: 3s
+      timeout: 3s
+      start_period: 20s
+    restart: on-failure
+
+
+  cardano-rosetta-server:
+    container_name: cardano-rosetta-server
+    #image: inputoutput/cardano-rosetta:1.7.0
+    build:
+      cache_from:
+        - inputoutput/cardano-rosetta:master
+      context: ./cardano-rosetta
+      target: cardano-rosetta-server
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - CARDANO_CLI_PATH=/usr/local/bin/cardano-cli
+      - CARDANO_NODE_PATH=/usr/local/bin/cardano-node
+      - CARDANO_NODE_SOCKET_PATH=/ipc/node.socket
+      - DB_CONNECTION_STRING=postgresql://postgres:postgres@postgres:5432/cexplorer
+      - DEFAULT_RELATIVE_TTL=1000
+      - GENESIS_SHELLEY_PATH=/config/shelley/genesis.json
+      - LOGGER_LEVEL=debug
+      - PAGE_SIZE=30
+      - PORT=8080
+      - TOPOLOGY_FILE_PATH=/config/node-bft1/topology.json
+      - MODE=offline
+    expose:
+      - 8080
+    ports:
+      - 127.0.0.1:8888:8080
+    depends_on:
+      - cardano-node1
+    volumes:
+      - ./volumes/config:/config
+      #- ../config/network/${NETWORK:-mainnet}:/config
+      - node1-ipc:/ipc
+    profiles:
+      - donotstart
+    restart: on-failure
+
+  icarus:
+    container_name: icarus
+    image: piotrstachyra/icarus:v2022-07-01
+    ports:
+      - 127.0.0.1:4444:4444
+    network_mode: "host"
+    restart: on-failure
+    profiles:
+      - donotstart
+
+  cardano-wallet1:
+    container_name: cardano-wallet1
+    image: inputoutput/cardano-wallet:2022.5.27
+    #image: inputoutput/cardano-wallet:2022.1.18
+    depends_on:
+      - "cardano-node1"
+    volumes:
+      - ./volumes/config:/config
+      - wallet-db:/wallet-db
+      - node1-ipc:/ipc
+    ports:
+      - 127.0.0.1:8090:8090
+    entrypoint: [
+        "cardano-wallet",
+        "serve",
+        "--node-socket", "/ipc/node.socket",
+        "--database", "/wallet-db",
+        "--listen-address", "0.0.0.0",
+        "--testnet", "/config/byron/genesis.json",
+      ]
+    environment:
+      - CMD="cardano-wallet serve --node-socket /ipc/node.socket --database /wallet-db --listen-address 0.0.0.0"
+      - NETWORK="testnet"
+    healthcheck:
+      test: ["CMD-SHELL", "cardano-wallet network information || exit 1"]
+      timeout: 3s
+    logging:
+      driver: "json-file"
+      options:
+        compress: "true"
+        max-file: "10"
+        max-size: "50m"
+    restart: on-failure
+
+
+  cardano-node1:
+    container_name: cardano-node1
+    image: inputoutput/cardano-node:1.33.0
+    environment:
+      - CARDANO_NODE_SOCKET_PATH=/ipc/node.socket # cardano-cli query tip --testnet-magic 42
+    entrypoint: [
+        "cardano-node",
+        "run",
+        "--config", "/config/configuration1.yaml",
+        "--topology", "/config/node-bft1/topology.json",
+        "--database-path", "/data/db",
+        "--socket-path", "/ipc/node.socket",
+        "--shelley-kes-key", "/config/node-bft1/shelley/kes.skey",
+        "--shelley-vrf-key", "/config/node-bft1/shelley/vrf.skey",
+        "--shelley-operational-certificate", "/config/node-bft1/shelley/node.cert",
+        "--port", "3001",
+        "--delegation-certificate", "/config/node-bft1/byron/delegate.cert",
+        "--signing-key", "/config/node-bft1/byron/delegate.key",
+    ]
+    ports:
+      - 127.0.0.1:3001:3001
+      - 127.0.0.1:12718:12718
+      - 127.0.0.1:12719:12719
+    volumes:
+      - ./volumes/config:/config
+      - node1-db:/data/db
+      - node1-ipc:/ipc
+#      - ./volumes/cnode-helper-scripts:/cnode-helper-scripts
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f 127.0.0.1:12718 || exit 1"]
+      timeout: 3s
+    restart: on-failure
+
+
+  cardano-node2:
+    container_name: cardano-node2
+    image: inputoutput/cardano-node:1.33.0
+    environment:
+      - CARDANO_NODE_SOCKET_PATH=/ipc/node.socket # cardano-cli query tip --testnet-magic 42
+    entrypoint: [
+        "cardano-node",
+        "run",
+        "--config", "/config/configuration2.yaml",
+        "--topology", "/config/node-bft2/topology.json",
+        "--database-path", "/data/db",
+        "--socket-path", "/ipc/node.socket",
+        "--shelley-kes-key", "/config/node-bft2/shelley/kes.skey",
+        "--shelley-vrf-key", "/config/node-bft2/shelley/vrf.skey",
+        "--shelley-operational-certificate", "/config/node-bft2/shelley/node.cert",
+        "--port", "3002",
+        "--delegation-certificate", "/config/node-bft2/byron/delegate.cert",
+        "--signing-key", "/config/node-bft2/byron/delegate.key",
+    ]
+    ports:
+      - 127.0.0.1:3002:3002
+      - 127.0.0.1:12728:12728
+      - 127.0.0.1:12729:12729
+    volumes:
+      - ./volumes/config:/config
+      - node2-db:/data/db
+      - node2-ipc:/ipc
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f 127.0.0.1:12728 || exit 1"]
+      timeout: 3s
+    restart: on-failure
+    #profiles:
+    #  - donotstart
+
+
+  cardano-node3:
+    container_name: cardano-node3
+    image: inputoutput/cardano-node:1.33.0
+    environment:
+      - CARDANO_NODE_SOCKET_PATH=/ipc/node.socket
+    entrypoint: [
+        "cardano-node",
+        "run",
+        "--config", "/config/configuration3.yaml",
+        "--topology", "/config/node-pool1/topology.json",
+        "--database-path", "/data/db",
+        "--socket-path", "/ipc/node.socket",
+        "--shelley-kes-key", "/config/node-pool1/shelley/kes.skey",
+        "--shelley-vrf-key", "/config/node-pool1/shelley/vrf.skey",
+        "--shelley-operational-certificate", "/config/node-pool1/shelley/node.cert",
+        "--port", "3003",
+    ]
+    ports:
+      - 127.0.0.1:3003:3003
+      - 127.0.0.1:12738:12738
+      - 127.0.0.1:12739:12739
+    volumes:
+      - ./volumes/config:/config
+      - node3-db:/data/db
+      - node3-ipc:/ipc
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f 127.0.0.1:12738 || exit 1"]
+      timeout: 3s
+    restart: on-failure
+    #profiles:
+    #  - donotstart
+
+
+  cardano-rt-view:
+    container_name: cardano-rt-view
+    build: ./docker/cardano-rt-view-docker
+    volumes:
+      - ./volumes/cardano-rt-view.json:/cardano-rt-view/cardano-rt-view.json
+    ports:
+      - 127.0.0.1:8024:8024
+    depends_on:
+      - cardano-node1
+      - cardano-node2
+      - cardano-node3
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f 127.0.0.1:8024/ || exit 1"]
+    restart: on-failure
+    profiles:
+      - donotstart
+
+  cardano-explorer-app:
+    container_name: cardano-explorer-app
+    build: ./docker/cardano-explorer-app-docker
+    environment:
+      - CARDANO_NETWORK=mainnet
+      - GRAPHQL_API_HOST=localhost
+      - GRAPHQL_API_PORT=11032
+      - GRAPHQL_API_PROTOCOL=http
+#      - GRAPHQL_API_PATH=graphql
+    entrypoint: ["yarn", "dev"]
+    network_mode: "host"
+    #ports:
+    #  - 127.0.0.1:4000:4000
+    depends_on:
+      - cardano-graphql
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --output /dev/null  127.0.0.1:4000/ || exit 1"]
+    restart: on-failure
+
+
+  cardano-faucet:
+    container_name: cardano-faucet
+    build: ./docker/cardano-faucet-docker
+    environment:
+      #- FAUCET_API_KEY_PATH="/opt/cardano-faucet/faucet.apikey"
+      #- FAUCET_WALLET_ID_PATH=/opt/cardano-faucet/faucet.walletid
+      #- FAUCET_PASSPHRASE_PATH=/opt/cardano-faucet/faucet.passphrase
+      - FAUCET_LISTEN_ADDRESS=0.0.0.0
+      - FAUCET_LISTEN_PORT=8091
+      - WALLET_LISTEN_PORT=8090
+      - WALLET_API=http://cardano-wallet1:8090/v2
+      - USE_RECAPTCHA_ON_ANON=false
+      - FAUCET_LOG_LEVEL=DEBUG
+      - CRYSTAL_LOG_LEVEL=DEBUG
+    volumes:
+      - ./volumes/config:/config
+      - ./volumes/faucet.apikey-example:/opt/cardano-faucet/faucet.apikey
+    depends_on:
+      - cardano-wallet1
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f 127.0.0.1:8091/metrics || exit 1"]
+      start_period: 20s
+    ports:
+      - 127.0.0.1:8091:8091
+
+
+  cardano-playground:
+    container_name: cardano-playground
+    build: ./docker/cardano-playground-docker
+    environment:
+      - NIX_BUILD_CORES=16
+      #- GITHUB_CLIENT_ID=
+      #- GITHUB_CLIENT_SECRET=
+      #- JWT_SIGNATURE=
+      #- FRONTEND_URL=
+      #- GITHUB_CALLBACK_PATH=
+    #volumes:
+    #  - ./volumes/config:/config
+    ports:
+      - 127.0.0.1:8009:8009
+#      - 127.0.0.1:8080:8080
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k --fail --silent --output /dev/null  https://127.0.0.1:8009 || exit 1"]
+    restart: on-failure
+    profiles:
+      - donotstart
+
+
+  cardano-submit-api:
+    container_name: cardano-submit-api
+    build: ./docker/cardano-submit-api-docker
+    environment:
+      - CARDANO_NODE_SOCKET_PATH=/ipc/node.socket
+    volumes:
+      - ./volumes/config:/config
+      - node1-ipc:/ipc
+    ports:
+      - 127.0.0.1:5555:5555
+    depends_on:
+      - cardano-node1
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --output /dev/null 127.0.0.1:5555 || exit 1"]
+    restart: on-failure
+
+
+  cardano-sidetree:
+    container_name: cardano-sidetree
+    build: ./docker/cardano-sidetree-docker
+    environment:
+      - CARDANO_CONFIG_FILE_PATH=/cardano-sidetree-config/testnet-cardano-config.json
+      - CORE_CONFIG_FILE_PATH=/cardano-sidetree-config/testnet-core-config.json
+      - CORE_VERSIONING_CONFIG_FILE_PATH=/cardano-sidetree-config/testnet-core-versioning.json
+    volumes:
+      - ./docker/cardano-sidetree-docker/testnet-cardano-config.json:/cardano-sidetree-config/testnet-cardano-config.json
+      - ./docker/cardano-sidetree-docker/testnet-core-config.json:/cardano-sidetree-config/testnet-core-config.json
+      - ./docker/cardano-sidetree-docker/testnet-core-versioning.json:/cardano-sidetree-config/testnet-core-versioning.json
+      - ./docker/cardano-sidetree-docker/create-testIssuer.js:/sidetree-cardano/examples/create-testIssuer.js
+      - ./docker/cardano-sidetree-docker/create-testDid.js:/sidetree-cardano/examples/create-testDid.js
+    depends_on:
+      - mongo
+      - cardano-node1
+      - ipfs
+      - cardano-submit-api
+    ports:
+      - 127.0.0.1:1111:8080
+      - 127.0.0.1:3333:3000
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f 127.0.0.1:3000/version || exit 1"]
+    restart: on-failure
+    #profiles:
+    #  - donotstart
+
+  universal-resolver-frontend:
+    container_name: universal-resolver-frontend
+    build: ./docker/uni-resolver-frontend-docker
+    environment:
+      - BACKEND_URL=http://localhost:8080/
+    depends_on:
+      - universal-resolver-web
+    ports:
+      - 127.0.0.1:2003:7081
+    restart: on-failure
+    #profiles:
+    #  - donotstart
+
+  universal-resolver-web:
+    container_name: universal-resolver-web
+    build: ./docker/uni-resolver-docker
+    ports:
+      - 127.0.0.1:8080:8080
+    depends_on:
+      - resolver-driver-did-ada
+    restart: on-failure
+    #profiles:
+    #  - donotstart
+
+
+  resolver-driver-did-ada:
+    container_name: resolver-driver-did-ada
+    build: ./docker/resolver-driver-did-ada-docker
+    environment:
+      - uniresolver_driver_did_ada_node_url=http://cardano-sidetree:3000
+    depends_on:
+      - cardano-sidetree
+    ports:
+      - 127.0.0.1:8000:8000
+    restart: on-failure
+    #profiles:
+    #  - donotstart
+
+
+  cardano-config-generator:
+    container_name: cardano-config-generator
+    build:
+      context: ./
+      dockerfile: ./docker/cardano-config-generator-docker/Dockerfile
+    #user: "user"
+    volumes:
+      - ./volumes/generated-config-tmp:/home/user/generated-config-tmp:rw
+    restart: on-failure
+    #profiles:
+    #  - donotstart
+    
+  cardano-tx-generator:
+    container_name: cardano-tx-generator
+    build:
+      context: ./
+      dockerfile: ./docker/cardano-tx-generator-docker/Dockerfile
+    #user: "user"
+    restart: on-failure
+    profiles:
+      - donotstart
+    
+  cardano-membench:
+    container_name: cardano-membench
+    build:
+      context: ./
+      dockerfile: ./docker/cardano-membench-docker/Dockerfile
+    #user: "user"
+    restart: on-failure
+    profiles:
+      - donotstart
+
+volumes:
+  mongo-data:
+  db-sync-data:
+  db-sync-tmp:
+  wallet-db:
+  node1-db:
+  node1-ipc:
+  node2-db:
+  node2-ipc:
+  node3-db:
+  node3-ipc:
+
+
+networks:
+  default:
+    name: "cpn"
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    enable_ipv6: false

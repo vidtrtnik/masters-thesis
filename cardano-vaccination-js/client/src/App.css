@@ -1,0 +1,120 @@
+div.d-flex.col {
+  margin-left: 5rem;
+  margin-right: 5rem;
+  gap: 5rem;
+}
+div.card-icon {
+  color: #001133;
+  margin: auto;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+div.card-button {
+  margin: auto;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+div.title {
+  color: #eeeeee;
+  margin: 3rem;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+div.flex-fill {
+  text-align: center;
+  color: #001133;
+  background-color: #eeeeee;
+}
+
+.navbar {
+  background-color: #001133;
+}
+
+div.App {
+  background-color: #001133;
+  height:100vh
+}
+
+.auth-card {
+  width: 30vw;
+  min-width: 25vw;
+  max-width: 30vw;
+  margin: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 2rem;
+}
+
+.auth-buttons {
+  margin-top: 2rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.users.add-buttons {
+  display: flex;
+  justify-content: center;
+  margin-left: 2rem;
+  margin-right: 2rem;
+}
+
+.users-card {
+  margin-left: 5rem;
+  margin-right: 5rem;
+  padding: 2rem;
+}
+
+.status-icon {
+  font-size: 2.15rem;
+}
+
+.issue-form-container {
+  text-align: center;
+  color: #001133;
+  background-color: #eeeeee;
+  border-radius: 2rem !important;
+  padding: 2rem;
+  margin: 2rem;
+}
+
+.viewvc-form-container.container-fluid {
+  padding-left: 5rem;
+  padding-right: 5rem;
+
+}
+
+.card.border-info {
+  border-width: 0.25rem;
+  box-shadow: inset -0.5rem -0.5rem #00b7ff;
+}
+/*
+.auth-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  margin: auto;
+  
+}
+
+.auth-form {
+  width: 33vw;
+  box-shadow: rgb(0 0 0 / 16%) 1px 1px 10px;
+  padding: 5rem;
+  background-color: white;
+}
+
+.btn.btn-primary {
+  background-color: #0033ad;
+}*/
+
+h2, h4, mb-3 {
+  color:#001133;
+}
+#light {
+  background-color: white;
+}

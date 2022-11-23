@@ -1,0 +1,14 @@
+{
+   "Producers": [
+     {
+       "addr": "cardano-node1",
+       "port": 3001,
+       "valency": 1
+     }
+   , {
+       "addr": "cardano-node3",
+       "port": 3003,
+       "valency": 1
+     }
+   ]
+ }

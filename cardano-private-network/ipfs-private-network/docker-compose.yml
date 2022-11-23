@@ -1,0 +1,179 @@
+version: "3.9"
+
+services:
+
+  ipfs:
+    container_name: ipfs
+    build: ./ipfs-private-network/docker/ipfs-private-docker
+    #image: ipfs/go-ipfs:latest
+    volumes:
+      - ipfs_path:/data/ipfs
+      - ipfs_fuse:/ipfs
+      - ipns_fuse:/ipns
+      - ./volumes/ipfs-common:/ipfs-common
+    environment:
+      - IPFS_PATH=/data/ipfs
+      - IPFS_LOGGING=debug
+      - LIBP2P_FORCE_PNET=1
+      - SWARM_KEY=49d54a7d9b177c3d253bdae07d9bf6b9fd0b3ae9af6e5bf95fc1e1c35c4d7c23
+      - API_PORT=5001
+      - GATEWAY_PORT=8080
+      - FIRST_NODE=1
+    ports:
+      - 127.0.0.1:4001:4001/tcp
+      - 127.0.0.1:4001:4001/udp
+      - 127.0.0.1:5001:5001
+      - 127.0.0.1:8081:8080
+    restart: on-failure
+
+  ipfs1-cluster:
+    container_name: ipfs1-cluster
+    image: ipfs/ipfs-cluster:latest
+    depends_on:
+      - ipfs
+    environment:
+      - CLUSTER_PEERNAME=cluster1
+      - CLUSTER_SECRET=08517b00147f3e133e44d498e17ebfcd2b3479f28ec0611c82bbf789404d2c6b
+      - CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/dns4/ipfs/tcp/5001
+      - CLUSTER_CRDT_TRUSTEDPEERS=*
+      - CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094
+      - CLUSTER_MONITORPINGINTERVAL=10s
+    ports:
+          - "127.0.0.1:9094:9094"
+          # - "9096:9096" # Cluster IPFS Proxy endpoint
+    volumes:
+      - ipfs1_cl_data:/data/ipfs-cluster
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:9094/health/alerts  2>&1 | grep -E -o [[]] || exit 1"]
+    restart: on-failure
+
+  ipfs2:
+    container_name: ipfs2
+    build: ./ipfs-private-network/docker/ipfs-private-docker
+    #build: ./docker/ipfs-private-docker
+    #image: ipfs/go-ipfs:latest
+    volumes:
+      - ipfs2_path:/data/ipfs
+      - ipfs2_fuse:/ipfs
+      - ipns2_fuse:/ipns
+      - ./volumes/ipfs-common:/ipfs-common
+    environment:
+      - IPFS_PATH=/data/ipfs
+      - IPFS_LOGGING=debug
+      - LIBP2P_FORCE_PNET=1
+      - SWARM_KEY=49d54a7d9b177c3d253bdae07d9bf6b9fd0b3ae9af6e5bf95fc1e1c35c4d7c23
+      - API_PORT=5001
+      - GATEWAY_PORT=8080
+      - FIRST_NODE=0
+    depends_on:
+      - ipfs
+    ports:
+      - 127.0.0.1:5002:5001
+      - 127.0.0.1:8082:8080
+    restart: on-failure
+
+  ipfs2-cluster:
+    container_name: ipfs2-cluster
+    image: ipfs/ipfs-cluster:latest
+    depends_on:
+      - ipfs2
+    environment:
+      - CLUSTER_PEERNAME=cluster2
+      - CLUSTER_SECRET=08517b00147f3e133e44d498e17ebfcd2b3479f28ec0611c82bbf789404d2c6b
+      - CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/dns4/ipfs/tcp/5001
+      - CLUSTER_CRDT_TRUSTEDPEERS=*
+      - CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094
+      - CLUSTER_MONITORPINGINTERVAL=10s
+    volumes:
+      - ipfs2_cl_data:/data/ipfs-cluster
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:9094/health/alerts  2>&1 | grep -E -o [[]] || exit 1"]
+    restart: on-failure
+
+  ipfs3:
+    container_name: ipfs3
+    build: ./ipfs-private-network/docker/ipfs-private-docker
+    #build: ./docker/ipfs-private-docker
+    #image: ipfs/go-ipfs:latest
+    volumes:
+      - ipfs3_path:/data/ipfs
+      - ipfs3_fuse:/ipfs
+      - ipns3_fuse:/ipns
+      - ./volumes/ipfs-common:/ipfs-common
+    environment:
+      - IPFS_PATH=/data/ipfs
+      - IPFS_LOGGING=debug
+      - LIBP2P_FORCE_PNET=1
+      - SWARM_KEY=49d54a7d9b177c3d253bdae07d9bf6b9fd0b3ae9af6e5bf95fc1e1c35c4d7c23
+      - API_PORT=5001
+      - GATEWAY_PORT=8080
+      - FIRST_NODE=0
+    depends_on:
+      - ipfs
+    ports:
+      - 127.0.0.1:5003:5001
+      - 127.0.0.1:8083:8080
+    restart: on-failure
+
+  ipfs3-cluster:
+    container_name: ipfs3-cluster
+    image: ipfs/ipfs-cluster:latest
+    depends_on:
+      - ipfs3
+    environment:
+      - CLUSTER_PEERNAME=cluster3
+      - CLUSTER_SECRET=08517b00147f3e133e44d498e17ebfcd2b3479f28ec0611c82bbf789404d2c6b
+      - CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/dns4/ipfs/tcp/5001
+      - CLUSTER_CRDT_TRUSTEDPEERS=*
+      - CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094
+      - CLUSTER_MONITORPINGINTERVAL=10s
+    volumes:
+      - ipfs3_cl_data:/data/ipfs-cluster
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:9094/health/alerts  2>&1 | grep -E -o [[]] || exit 1"]
+    restart: on-failure
+
+  ipfs-dag-builder-vis:
+    container_name: ipfs-dag-builder-vis
+    build: ./ipfs-private-network/docker/ipfs-dag-builder-vis-docker
+    ports: 
+      - 127.0.0.1:1234:1234
+    restart: on-failure
+# -------------------------------------------------------------------------------------------
+
+  ipfs-horizon:
+    container_name: ipfs-horizon
+    build: ./docker/ipfs-horizon-docker
+    depends_on:
+      - ipfs
+      - ipfs1-cluster
+    #network_mode: "host"
+    #ports:
+    #  - 127.0.0.1:3333:3000
+    restart: on-failure
+    profiles:
+      - donotstart
+
+# -------------------------------------------------------------------------------------------
+
+
+volumes:
+  ipfs1_cl_data:
+  ipfs2_cl_data:
+  ipfs3_cl_data:
+  ipfs_path:
+  ipfs_fuse:
+  ipns_fuse:
+  ipfs2_path:
+  ipfs2_fuse:
+  ipns2_fuse:
+  ipfs3_path:
+  ipfs3_fuse:
+  ipns3_fuse:
+
+networks:
+  default:
+    name: "cpn"
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    enable_ipv6: false

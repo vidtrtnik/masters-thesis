@@ -1,0 +1,19 @@
+server:
+  servlet:
+    contextPath: /
+    mappings:
+      properties: "/1.0/properties"
+      resolve: "/1.0/identifiers"
+      methods: "/1.0/methods"
+      testIdentifiers: "/1.0/testIdentifiers"
+  port: '8080'
+spring:
+  profiles:
+    active: ${uniresolver_web_spring_profiles_active}
+uniresolver:
+  drivers:
+    - pattern: "^(did:ada:.+)$"
+      url: "http://resolver-driver-did-ada:8000/1.0/identifiers/$1"
+      propertiesEndpoint: 'true'
+      testIdentifiers:
+        - did:ada:EiCUb7_ly9dsXBwuFDvBYxaD9u0L7Ds4nWLgLgS8zEcedA

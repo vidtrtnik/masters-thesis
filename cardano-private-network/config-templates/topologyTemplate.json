@@ -1,0 +1,14 @@
+{
+   "Producers": [
+     {
+       "addr": "{ADDR1}",
+       "port": {PORT1},
+       "valency": 1
+     }
+   , {
+       "addr": "{ADDR2}",
+       "port": {PORT2},
+       "valency": 1
+     }
+   ]
+ }

@@ -1,0 +1,5 @@
+{
+    "type": "CertificateShelley",
+    "description": "Stake Address Delegation Certificate",
+    "cborHex": "83028200581c7375de011742aef52db32d9f44a157fd9f5dee678b9e9cbb51b0cbd6581ceff895089b812dab9a0b734caef1c493cfffecbf504418ba5d71932a"
+}

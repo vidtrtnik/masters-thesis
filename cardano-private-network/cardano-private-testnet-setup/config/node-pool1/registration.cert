@@ -1,0 +1,5 @@
+{
+    "type": "CertificateShelley",
+    "description": "Stake Pool Registration Certificate",
+    "cborHex": "8a03581ceff895089b812dab9a0b734caef1c493cfffecbf504418ba5d71932a5820694b19b2562ce25ec03e29e30a5d33b0793410bb404ee476a0de3300ed331a970000d81e820001581de01d5fc7a1f0b679fc398de8e73e4d01ded5c9848d91699edb51c26afc81581c1d5fc7a1f0b679fc398de8e73e4d01ded5c9848d91699edb51c26afc80f6"
+}

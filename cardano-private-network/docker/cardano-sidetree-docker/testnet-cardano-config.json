@@ -1,0 +1,14 @@
+{
+  "cardanoFeeSpendingCutoffInLovelaces": 10000000,
+  "cardanoWalletMnemonic": "slab praise suffer rabbit during dream arch harvest culture book owner loud wool salon table animal vivid arrow dirt divide humble tornado solution jungle",
+  "cardanoNetwork": "testnet",
+  "minimunConfirmationToValidateTransaction": 1,
+  "blockfrostProjectId": "xxxxxxxx",
+  "databaseName": "sidetree-cardano-testnet",
+  "mongoDbConnectionString": "mongodb://root:example@mongo:27017/",
+  "port": 3001,
+  "sidetreeTransactionFeeMarkupPercentage": 0,
+  "sidetreeTransactionPrefix": "sidetree:",
+  "cardanoMetadataLabel": "74338733",
+  "transactionPollPeriodInSeconds": 60
+}
