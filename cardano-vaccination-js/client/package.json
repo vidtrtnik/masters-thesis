@@ -59,5 +59,8 @@
   },
   "browser": {
     "crypto": false
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3"
   }
 }

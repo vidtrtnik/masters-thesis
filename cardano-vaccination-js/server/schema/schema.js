@@ -1,6 +1,4 @@
-// localhost:5000/graphql?query=%7BRevocationList2020Credential(id%253A%22123%22)
-
-const { GraphQLObjectType, GraphQLSchema, GraphQLList, GraphQLID, GraphQLString, GraphQLInt, GraphQLNonNull, GraphQLEnumType, responsePathAsArray } = require('graphql');
+const { GraphQLObjectType, GraphQLSchema, GraphQLList, GraphQLID, GraphQLString, GraphQLInt, GraphQLNonNull } = require('graphql');
 
 const VaccinationCertificate = require('../models/VaccinationCertificate');
 const Patient = require('../models/Patient');
@@ -13,15 +11,16 @@ const User = require('../models/User');
 const RevocationVC = require('../models/RevocationVC');
 
 const utils = require('../helpers/did-vc-utils.js');
-const didjwtvc = require('did-jwt-vc');
-const axios = require('axios');
-const { response } = require('express');
 const vaccinatorutils = require('../helpers/vaccinator-utils');
-const cardanoblockchain = require('../helpers/cardano-blockchain');
 
-const { UserType, DidResolveType, DidType, VerifiableCredentialType, VerifiablePresentationType, PatientType, VaccinationCertificateType, VaccinationCenterType, VerifierType, VaccinationStorageType, RevocationVCType } = require('./types.js');
+const { DidResolveType, DidType, VerifiableCredentialType, VerifiablePresentationType, PatientType, VaccinationCertificateType, VaccinationCenterType, VerifierType, VaccinationStorageType, RevocationVCType } = require('./types.js');
 const { resolveQuery_login, resolveMutation_addVCS, resolveMutation_addVaccinationCertificateS, resolveMutation_addVP, resolveMutation_addVC, resolveQuery_didResolve, resolveQuery_getVPsFromCardanoBlockchain, resolveQuery_getVCsFromCardanoBlockchain, resolveMutation_addPatient, resolveMutation_deletePatient, resolveMutation_addVaccinationCertificate, resolveMutation_addVerifiablePresentation, resolveMutation_addVaccinationCentre, resolveMutation_addVerifier, resolveMutation_addVaccinationStorage, resolveQuery_authChallenge, resolveQuery_authResponse, resolveQuery_decryptTest, resolveQuery_decryptVCFallback, resolveQuery_verifyVPFallback, resolveMutation_mintNFT, resolveQuery_getVaccinationStoragesFromBlockchain } = require('./resolveFunctions');
-const server = "http://127.0.0.1:3333";
+
+require('dotenv').config();
+
+const server = process.env.SIDETREE_CARDANO_SERVER;
+//const server = "http://127.0.0.1:3333"
+
 const RootQuery = new GraphQLObjectType({
     name: 'RootQueryType',
     fields: {
@@ -562,7 +561,7 @@ const mutation = new GraphQLObjectType({
                 type: { type: GraphQLString },
             },
             async resolve(parent, args) {
-                console.log("???????????????????????????????????????????????????????????????????????????????????")
+                console.log("addVaccinationCertificate - resolve()")
                 console.log(args)
                 var resolveRes;
                 if (args.type === undefined || args.type === null || args.type === 'N')

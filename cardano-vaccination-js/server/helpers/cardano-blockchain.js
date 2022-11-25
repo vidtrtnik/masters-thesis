@@ -316,8 +316,6 @@ async function createAndSignTransaction3(usedvaccine, label) {
 };
 
 
-
-
 async function createAndSignTransaction(additionalData, issuerDid, label, action, qr_path1 = null, qr_path2 = null) {
 
   var chunks = [];
@@ -358,8 +356,6 @@ async function createAndSignTransaction(additionalData, issuerDid, label, action
   let transaction = await wallet.sendPayment(passphrase, receiverAddress, amounts, data);
   return transaction.id;
 };
-
-
 
 async function createAndSignTransaction2(vacdata, dosage, label, action) {
   console.log("createAndSignTransaction2");

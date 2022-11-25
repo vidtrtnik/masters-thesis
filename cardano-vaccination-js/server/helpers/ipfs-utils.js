@@ -2,15 +2,18 @@ const ipfsClient = require('ipfs-http-client');
 const canvas = require('canvas');
 const fs = require('fs');
 
+require('dotenv').config();
+const ipfsServer = process.env.IPFS_SERVER;
+
 async function ipfsAdd(contents) {
-    const ipfs = await ipfsClient.create(new URL('http://127.0.0.1:5001'));
+    const ipfs = await ipfsClient.create(new URL(ipfsServer));
     const add = await ipfs.add(Buffer.from(JSON.stringify(contents)), { pin: true })
 
     return add;
 }
 
 async function ipfsAddBuf(buffer) {
-    const ipfs = await ipfsClient.create(new URL('http://127.0.0.1:5001'));
+    const ipfs = await ipfsClient.create(new URL(ipfsServer));
     const add = await ipfs.add(buffer, { pin: true })
 
     return add;

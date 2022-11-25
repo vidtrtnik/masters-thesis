@@ -33,13 +33,3 @@ const VaccinationCertificateSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('VaccinationCertificate', VaccinationCertificateSchema);
-
-
-/*
-    vc: {
-        type: String,
-    },
-    transactionId: {
-        type: String,
-    },
-*/

@@ -1,7 +1,6 @@
 const IonSdk = require('@decentralized-identity/ion-sdk');
 const randomBytes = require('randombytes');
 const secp256k1 = require('@transmute/did-key-secp256k1');
-const bls12381 = require('@transmute/bls12381-key-pair');
 
 //const { randomBytes } = require('crypto')
 const x25519kp = require('@transmute/x25519-key-pair');
@@ -9,14 +8,11 @@ const x25519kp = require('@transmute/x25519-key-pair');
 const ccjs_secp256k1 = require('secp256k1')
 const rl = require("vc-revocation-list");
 
-const { JsonWebKey, JsonWebSignature } = require('@transmute/json-web-signature');
 const request = require('request');
 const util = require('util');
-const requestPromise = util.promisify(request);
 const didjwt = require('did-jwt');
 const didjwtvc = require('did-jwt-vc');
 const axios = require('axios');
-const eciesjs = require('eciesjs');
 
 const RevocationVC = require('../models/RevocationVC.js');
 
@@ -260,10 +256,8 @@ async function createVCRevPayload(vcrId, vcrEncList) {
   }
 }
 
-async function createVCPayload(vcNbf, patient, vcentre, vaccine, credStatusId, credStatusListIndex, credStatusListCred) {
-  //console.log(csName, csType, vcNbf, vcSub, credStatusId, credStatusListIndex, credStatusListCred);
-  console.log(vcNbf, patient, vcentre, vaccine, credStatusId, credStatusListIndex, credStatusListCred)
-  console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+async function createVCPayload(vcNbf, patient, vcentre, vaccine, credStatusId, credStatusListIndex, credStatusListCred, expd=10000000) {
+  var vcExp = vcNbf + expd;
   return {
     sub: patient.did,
     nbf: vcNbf,
@@ -274,7 +268,7 @@ async function createVCPayload(vcNbf, patient, vcentre, vaccine, credStatusId, c
       name: "COVID-19 Vaccination Certificate",
       description: "COVID-19 Vaccination Certificate",
       issuanceDate: vcNbf,
-      expirationDate: vcNbf,
+      expirationDate: vcExp,
       issuer: vcentre.did,
       credentialSubject: {
         type: "VaccinationEvent",
@@ -284,8 +278,8 @@ async function createVCPayload(vcNbf, patient, vcentre, vaccine, credStatusId, c
         countryOfVaccination: "SI",
         recipient: {
           type: "VaccineRecipient",
-          givenName: patient.name,
-          familyName: patient.name,
+          givenName: patient.name.split(' ')[0],
+          familyName: patient.name.split(' ')[1],
           gender: "M",
           birthDate: vcNbf
         },
@@ -307,10 +301,8 @@ async function createVCPayload(vcNbf, patient, vcentre, vaccine, credStatusId, c
   }
 }
 
-async function createVCPayload_Small(vcNbf, patient, vcentre, vaccine, credStatusId, credStatusListIndex, credStatusListCred) {
-  //console.log(csName, csType, vcNbf, vcSub, credStatusId, credStatusListIndex, credStatusListCred);
-  console.log(vcNbf, patient, vcentre, vaccine, credStatusId, credStatusListIndex, credStatusListCred)
-  console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+async function createVCPayload_Small(vcNbf, patient, vcentre, vaccine, credStatusId, credStatusListIndex, credStatusListCred, expd=10000000) {
+  var vcExp = vcNbf + expd;
   return {
     sub: patient.did,
     nbf: vcNbf,
@@ -321,7 +313,7 @@ async function createVCPayload_Small(vcNbf, patient, vcentre, vaccine, credStatu
       name: "COVID-19 Vaccination Certificate",
       description: "COVID-19 Vaccination Certificate",
       issuanceDate: vcNbf,
-      expirationDate: vcNbf,
+      expirationDate: vcExp,
       issuer: vcentre.did,
       credentialSubject: {
         type: "VaccinationEvent",
@@ -421,8 +413,7 @@ async function generateKeys2(override) {
 
 async function genKeyPair2(randomBytesOverride) {
   let keyGenerator = x25519kp.X25519KeyPair;
-  //console.log(keyGenerator)
-  console.log(randomBytesOverride);
+
   var keyPair = null;
   if (typeof randomBytesOverride === 'undefined') {
     keyPair = await keyGenerator.generate({ secureRandom: () => randomBytes(32) });

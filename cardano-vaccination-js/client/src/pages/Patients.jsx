@@ -1,7 +1,5 @@
 import Patients from '../components/Patients';
-import VaccinationCertificates from '../components/VaccinationCertificates';
 import AddPatientModal from '../components/AddPatientModal';
-import AddVaccinationCertificateModal from '../components/AddVaccinationCertificateModal';
 import AddCentreModal from '../components/AddCentreModal';
 import AddVerifierModal from '../components/AddVerifierModal';
 import AddStorageModal from '../components/AddStorageModal';
@@ -9,10 +7,8 @@ import Centres from '../components/Centres';
 import Verifiers from '../components/Verifiers';
 import Storages from '../components/Storages';
 import { IconContext } from "react-icons";
-import { TbVaccine } from "react-icons/tb";
-import {ImUserCheck} from "react-icons/im"
-import { FaUserInjured, FaHouseUser} from 'react-icons/fa';
-import {useLocation} from 'react-router-dom';
+import { FaUserInjured, FaHouseUser } from 'react-icons/fa';
+import { useLocation } from 'react-router-dom';
 
 export default function Home(test) {
   const location = useLocation();
@@ -20,31 +16,31 @@ export default function Home(test) {
   console.log(test)
   return (
     <>
-    <div class="title">
-    <IconContext.Provider value={{ color: '#001133', size: '6rem' }}>
-          <><FaHouseUser className="mb-3"/></>
+      <div class="title">
+        <IconContext.Provider value={{ color: '#001133', size: '6rem' }}>
+          <><FaHouseUser className="mb-3" /></>
         </IconContext.Provider>
-    <h2>Users and storages</h2>
-    <h4>id: {location.state ? location.state.userid: "guest"}</h4>
-    <br></br>
-    <div className="users add-buttons">
+        <h2>Users and storages</h2>
+        <h4>id: {location.state ? location.state.userid : "guest"}</h4>
+        <br></br>
+        <div className="users add-buttons">
           <AddCentreModal />
-            <AddPatientModal />
-            <AddVerifierModal />
-            <AddStorageModal />
+          <AddPatientModal />
+          <AddVerifierModal />
+          <AddStorageModal />
         </div>
-    </div>
+      </div>
 
-        <Centres />
-        <br></br>
-        <br></br>
-        <Patients />
-        <br></br>
-        <br></br>
-        <Verifiers />
-        <br></br>
-        <br></br>
-        <Storages />
+      <Centres />
+      <br></br>
+      <br></br>
+      <Patients />
+      <br></br>
+      <br></br>
+      <Verifiers />
+      <br></br>
+      <br></br>
+      <Storages />
     </>
   )
 }

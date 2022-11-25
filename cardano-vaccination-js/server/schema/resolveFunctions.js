@@ -12,16 +12,16 @@ const RevocationVC = require('../models/RevocationVC');
 
 const utils = require('../helpers/did-vc-utils.js');
 const didjwtvc = require('did-jwt-vc');
-const axios = require('axios');
 const vaccinatorutils = require('../helpers/vaccinator-utils');
 const cardanoblockchain = require('../helpers/cardano-blockchain');
+const jwt_decode = require('jwt-decode');
 
 const ipfs = require('../helpers/ipfs-utils');
 const jwt = require('jsonwebtoken');
 const eciesjs = require('eciesjs');
-const QRCode = require('qrcode')
+const QRCode = require('qrcode');
 const bcrypt = require('bcrypt');
-const crypto = require('crypto')
+const crypto = require('crypto');
 
 require('dotenv').config();
 
@@ -30,7 +30,7 @@ const server = process.env.SIDETREE_CARDANO_SERVER;
 
 const cardanoGraphqlServer = process.env.CARDANO_GRAPHQL_SERVER;
 
-const challengeText = "Hello";
+const challengeText = process.env.RANDOM_STRING;
 
 async function resolveQuery_decryptVCFallback(parent, args) {
   console.log("Private key: ", args.privkeyhex);
@@ -61,19 +61,20 @@ async function resolveQuery_decryptVCFallback(parent, args) {
 
     try {
       const vcJwtDec = eciesjs.decrypt(privateKey, vcJwtEnc).toString();
+      var decodedJwt = jwt_decode(vcJwtDec);
 
-      const didr = await utils.resolveDID(server, vcs[i].issuer);
+      const didr = await utils.resolveDID(server, decodedJwt.iss);
       const did_doc = didr.data.didDocument;
       const did_pubkey = did_doc.verificationMethod[0].publicKeyJwk;
 
-      const localResolver = await utils.getLocalResolver(vcs[i].issuer, did_pubkey);
+      const localResolver = await utils.getLocalResolver(decodedJwt.iss, did_pubkey);
       console.log(localResolver);
 
       console.log(vcJwtDec)
 
       const verifiedVC = await didjwtvc.verifyCredential(vcJwtDec, localResolver, { header: { alg: 'ES256K' } });
       console.log("VERIFIED VC: ", verifiedVC);
-      vcJwts.push({ transactionId: vcs[i].transactionId, issuer: vcs[i].issuer, action: vcs[i].action, vcJwtEnc: vcs[i].vcJwt, vcJwt: vcJwtDec, verifiedVC: JSON.stringify(verifiedVC), qr_cid: vcs[i].qr_cid });
+      vcJwts.push({ transactionId: vcs[i].transactionId, issuer: decodedJwt.iss, action: vcs[i].action, vcJwtEnc: vcs[i].vcJwt, vcJwt: vcJwtDec, verifiedVC: JSON.stringify(verifiedVC), qr_cid: vcs[i].qr_cid });
 
     }
     catch (e) {
@@ -92,15 +93,13 @@ async function resolveQuery_verifyVPFallback(parent, args) {
     for (const meta of tx.metadata) {
       if (meta.key === "8374347737") {
         try {
-          if (meta.value["0"] === args.holder) {
-            console.log("ARGS VERIFIER KEY: ", args.verifierKey)
             var vpJwtD = null;
             try {
               const privateKey = Buffer.from(args.verifierKey, 'hex');
               console.log(privateKey)
               const contents = Buffer.from(meta.value["2"].join(''), 'hex')
               vpJwtD = eciesjs.decrypt(privateKey, contents).toString();
-              console.log(vpJwtD)
+              //console.log(vpJwtD)
             }
             catch (e) { console.log(e) }
             vps.push(
@@ -113,7 +112,6 @@ async function resolveQuery_verifyVPFallback(parent, args) {
                 qr_cid: meta.value["4"]
               }
             );
-          }
 
         }
         catch (e) { console.log(e) }
@@ -125,22 +123,26 @@ async function resolveQuery_verifyVPFallback(parent, args) {
 
   var vpJwts = [];
   for (var i = 0; i < vps.length; i++) {
-    const vpJwt = vps[i].vpJwt;
+    const vpJwtDec = vps[i].vpJwt;
+    var decodedJwt = jwt_decode(vpJwtDec);
+    console.log(decodedJwt)
+    if(decodedJwt.iss !== args.holder)
+      continue;
 
     try {
-      const didr = await utils.resolveDID(server, vps[i].holder);
+      const didr = await utils.resolveDID(server, decodedJwt.iss);
       const did_doc = didr.data.didDocument;
       var did_pubkey = did_doc.verificationMethod[0].publicKeyJwk;
 
       console.log("DID PUBKEY: ", did_pubkey)
 
-      const localResolver = await utils.getLocalResolver(vps[i].holder, did_pubkey);
+      const localResolver = await utils.getLocalResolver(decodedJwt.iss, did_pubkey);
       console.log(localResolver);
 
-      const verifiedVP = await didjwtvc.verifyPresentation(vpJwt, localResolver);
+      const verifiedVP = await didjwtvc.verifyPresentation(vpJwtDec, localResolver);
       console.log("VERIFIED VP: ", verifiedVP);
 
-      vpJwts.push({ transactionId: vps[i].transactionId, issuer: vps[i].holder, action: vps[i].action, verifiedVP: JSON.stringify(verifiedVP), qr_cid: vps[i].qr_cid });
+      vpJwts.push({ transactionId: vps[i].transactionId, issuer: decodedJwt.iss, action: vps[i].action, verifiedVP: JSON.stringify(verifiedVP), qr_cid: vps[i].qr_cid });
     }
     catch (e) {
       console.log("ERROR: ", e);
@@ -208,7 +210,7 @@ async function resolveQuery_authResponse(parent, args) {
 
     jwtToken = jwt.sign(
       { user_id: user.id, user_did: user.did },
-      "UNSAFE_STRING",
+      process.env.RANDOM_STRING,
       { expiresIn: "2h" }
     );
     console.log(jwtToken);
@@ -398,7 +400,7 @@ async function resolveMutation_addPatient(parent, args) {
 
   const jwtToken = jwt.sign(
     { user_id: patient.id, user_did: patient_did },
-    "UNSAFE_STRING",
+    process.env.RANDOM_STRING,
     {
       expiresIn: "2h"
     }
@@ -451,7 +453,7 @@ async function resolveMutation_addVaccinationCentre(parent, args) {
 
   const jwtToken = jwt.sign(
     { user_id: center.id, center_did },
-    "UNSAFE_STRING",
+    process.env.RANDOM_STRING,
     {
       expiresIn: "2h"
     }
@@ -503,7 +505,7 @@ async function resolveMutation_addVerifier(parent, args) {
 
   const jwtToken = jwt.sign(
     { user_id: verifier.id, verifier_did },
-    "UNSAFE_STRING",
+    process.env.RANDOM_STRING,
     {
       expiresIn: "2h"
     }
@@ -633,7 +635,7 @@ async function resolveMutation_addVaccinationCertificate(parent, args) {
   await cardanoblockchain.createAndSignTransaction(vcJwt, issuerHash, "8222462378", vaccine.code)
     .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data); transactionID = data; })
     .catch(function (error) { console.log(error); })
-  console.log("TRANSACTION 1 ID: ", transactionID);
+  console.log("(createNewVC) TRANSACTION 1 ID: ", transactionID);
 
   const verifiableCredential = new VerifiableCredential({
     vaccinationInfo: vaccine.name,
@@ -662,6 +664,7 @@ async function resolveMutation_addVaccinationCertificate(parent, args) {
   console.log(issuerKey2);
   console.log(keys2);
 
+    /*
   var ipfsRes = await ipfs.ipfsAdd(vcJwt);
   console.log(ipfsRes);
 
@@ -672,7 +675,7 @@ async function resolveMutation_addVaccinationCertificate(parent, args) {
 
   var ipfsRes_QR = await ipfs.ipfsAddBuf(vp_qr);
   console.log(ipfsRes_QR);
-
+*/
   if (args.patientAuthKey)
     console.log("PATIENT AUTH KEY: ", args.patientAuthKey);
 
@@ -690,12 +693,6 @@ async function resolveMutation_addVaccinationCertificateS(parent, args) {
 
   const issuerDid = vcentre.did;
 
-  console.log(patient);
-  console.log(vcentre);
-  console.log(vaccine);
-  console.log("DID, KEY", issuerDid, issuerAuthKey);
-
-
   var vcJwt = null;
   var counter = null;
   await vaccinatorutils.createNewVC_Small(server, issuerDid, issuerAuthKey, patient.did, vaccine.name, args.additionalInfo, args.date, patient, vcentre, vaccine)
@@ -709,7 +706,7 @@ async function resolveMutation_addVaccinationCertificateS(parent, args) {
   await cardanoblockchain.createAndSignTransaction(vcJwt, issuerHash, "8222462378", vaccine.code)
     .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data); transactionID = data; })
     .catch(function (error) { console.log(error); })
-  console.log("TRANSACTION 1 ID: ", transactionID);
+  console.log("(addVaccinationCertificateS) TRANSACTION 1 ID: ", transactionID);
 
   const verifiableCredential = new VerifiableCredential({
     vaccinationInfo: vaccine.name,
@@ -738,6 +735,7 @@ async function resolveMutation_addVaccinationCertificateS(parent, args) {
   console.log(issuerKey2);
   console.log(keys2);
 
+  /*
   var ipfsRes = await ipfs.ipfsAdd(vcJwt);
   console.log(ipfsRes);
 
@@ -748,7 +746,7 @@ async function resolveMutation_addVaccinationCertificateS(parent, args) {
 
   var ipfsRes_QR = await ipfs.ipfsAddBuf(vp_qr);
   console.log(ipfsRes_QR);
-
+*/
   if (args.patientAuthKey)
     console.log("PATIENT AUTH KEY: ", args.patientAuthKey);
 
@@ -762,14 +760,7 @@ async function resolveMutation_addVC(parent, args) {
   const vaccine = await VaccinationStorage.findById(args.vaccineId);
 
   const issuerAuthKey = args.vcentreAuthKey;
-  const issuerKey2 = args.vcentreKey2;
   const issuerDid = vcentre.did;
-
-  console.log(patient);
-  console.log(vcentre);
-  console.log(vaccine);
-  console.log("DID, KEY", issuerDid, issuerAuthKey);
-
 
   var vcJwt = null;
   var counter = null;
@@ -788,6 +779,10 @@ async function resolveMutation_addVC(parent, args) {
   });
   //verifiableCredential.save();
   console.log("verifiableCredential.id: ", verifiableCredential.id);
+
+  await cardanoblockchain.createAndSignTransaction("DIDComm Transmission...", "REDACTED", "8222462378", vaccine.code)
+    .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data)})
+    .catch(function (error) { console.log(error); })
 
   const vaccinationCertificate = new VaccinationCertificate({
     vaccinationInfo: args.vaccinationInfo,
@@ -811,22 +806,13 @@ async function resolveMutation_addVCS(parent, args) {
   const patient = await Patient.findById(args.patientId);
   const vaccine = await VaccinationStorage.findById(args.vaccineId);
 
-  //const issuerAuthKey = "1111111111111111111111111111111111111111111111111111111111111111";
   const issuerAuthKey = args.vcentreAuthKey;
   const issuerKey2 = args.vcentreKey2;
 
   const issuerDid = vcentre.did;
-  //const issuerDid = "did:ada:EiCUb7_ly9dsXBwuFDvBYxaD9u0L7Ds4nWLgLgS8zEcedA"; 
-
-  console.log(patient);
-  console.log(vcentre);
-  console.log(vaccine);
-  console.log("DID, KEY", issuerDid, issuerAuthKey);
-
 
   var vcJwt = null;
   var counter = null;
-  //await vaccinatorutils.createNewVC(server, issuerDid, issuerAuthKey, patient.did, args.vaccinationInfo, args.additionalInfo, args.date)
   await vaccinatorutils.createNewVC_Small(server, issuerDid, issuerAuthKey, patient.did, vaccine.name, args.additionalInfo, args.date, patient, vcentre, vaccine)
     .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data); vcJwt = data.vcJwt; counter = data.counter })
     .catch(function (error) { console.log(error); })
@@ -839,8 +825,11 @@ async function resolveMutation_addVCS(parent, args) {
     subjectDid: patient.did,
     vcJwt: vcJwt
   });
-  //verifiableCredential.save();
   console.log("verifiableCredential.id: ", verifiableCredential.id);
+
+  await cardanoblockchain.createAndSignTransaction("DIDComm Transmission...", "REDACTED", "8222462378", vaccine.code)
+    .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data)})
+    .catch(function (error) { console.log(error); })
 
   const vaccinationCertificate = new VaccinationCertificate({
     vaccinationInfo: args.vaccinationInfo,
@@ -860,11 +849,10 @@ async function resolveMutation_addVCS(parent, args) {
 
 async function resolveMutation_addVerifiablePresentation(parent, args) {
   console.log("ARGS:", args);
-  //const issuerAuthKey = "1111111111111111111111111111111111111111111111111111111111111111";
   const issuerAuthKey = args.privkeyhex;
-
-  //const issuerDid = "did:ada:EiCUb7_ly9dsXBwuFDvBYxaD9u0L7Ds4nWLgLgS8zEcedA"; 
   const issuerDid = args.did;
+  var shasum = crypto.createHash('sha1')
+  var issuerHash = shasum.update(issuerDid).digest('hex');
 
   const verifier = await Verifier.findById(args.verifierId)
   console.log(verifier)
@@ -874,7 +862,6 @@ async function resolveMutation_addVerifiablePresentation(parent, args) {
   await vaccinatorutils.createNewVP(server, issuerDid, issuerAuthKey, verifier.did, args.vcJwt)
     .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data); vpJwtEnc = data.vpJwtEnc; vpJwt = data.vpJwt })
     .catch(function (error) { console.log(error); })
-
 
   const didr = await utils.resolveDID(server, issuerDid);
   const did_doc = didr.data.didDocument;
@@ -898,11 +885,10 @@ async function resolveMutation_addVerifiablePresentation(parent, args) {
 
 
   var transactionID = null;
-  await cardanoblockchain.createAndSignTransaction(vpJwtEnc, issuerDid, "8374347737", "PRESENTATION", ipfsRes_vp.path, ipfsRes_QR.path)
+  await cardanoblockchain.createAndSignTransaction(vpJwtEnc, issuerHash, "8374347737", "PRESENTATION", ipfsRes_vp.path, ipfsRes_QR.path)
     .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data); transactionID = data; })
     .catch(function (error) { console.log(error); })
   console.log("TRANSACTION ID: ", transactionID);
-
 
   const verifiablePresentation = new VerifiablePresentation({
     issuerDid: issuerDid,

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useMutation } from "@apollo/client"
-import { GET_DOSAGES} from "../queries/dosageQueries";
+import { GET_DOSAGES } from "../queries/dosageQueries";
 import { ADD_DOSAGE } from "../mutations/dosageMutations";
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
@@ -10,33 +10,33 @@ import { MdAddCircleOutline } from "react-icons/md"
 
 export default function AddStorageModal() {
 
-    const [show, setShow] = useState(false);
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
-    const [dosage, setDosage] = useState('');
-    const [name, setName] = useState('');
-    const [company, setCompany] = useState('');
+  const [dosage, setDosage] = useState('');
+  const [name, setName] = useState('');
+  const [company, setCompany] = useState('');
 
-    const [addDosage] = useMutation(ADD_DOSAGE, {
-        variables: { name, company, dosage },
-        refetchQueries: [{ query: GET_DOSAGES }],
-    });
-    
-    const onSubmit = (e) => {
-        e.preventDefault();
+  const [addDosage] = useMutation(ADD_DOSAGE, {
+    variables: { name, company, dosage },
+    refetchQueries: [{ query: GET_DOSAGES }],
+  });
+
+  const onSubmit = (e) => {
+    e.preventDefault();
 
 
-        if(name === '')
-            return alert();
+    if (name === '')
+      return alert();
 
-        addDosage(name, company, dosage);
-    };
-    
+    addDosage(name, company, dosage);
+  };
+
   return (
     <>
-    <Button className="m-3" variant="primary" onClick={handleShow}>
-    <IconContext.Provider value={{ color: "white", size: '1.7rem' }}>
+      <Button className="m-3" variant="primary" onClick={handleShow}>
+        <IconContext.Provider value={{ color: "white", size: '1.7rem' }}>
           <><MdAddCircleOutline /></>
         </IconContext.Provider>
         <br></br>
@@ -50,32 +50,32 @@ export default function AddStorageModal() {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+            <Form.Group className="mb-3" >
               <Form.Label>Name</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Name"
                 autoFocus
-                onChange={ (e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
               />
             </Form.Group>
-            
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+
+            <Form.Group className="mb-3" >
               <Form.Label>Company</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Company"
                 autoFocus
-                onChange={ (e) => setCompany(e.target.value)}
+                onChange={(e) => setCompany(e.target.value)}
               />
             </Form.Group>
 
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+            <Form.Group className="mb-3" >
               <Form.Label>Dosages</Form.Label>
               <Form.Control
                 type="number"
                 placeholder="Number of available dosages"
-                onChange={ (e) => setDosage(parseInt(e.target.value))}
+                onChange={(e) => setDosage(parseInt(e.target.value))}
               />
             </Form.Group>
 

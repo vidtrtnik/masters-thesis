@@ -3,41 +3,35 @@ import { useQuery } from "@apollo/client"
 import { GET_DECRYPTEDVC_FALLBACK } from "../queries/vaccinationCertificateQueries";
 import VCCard from "../components/VCCard";
 import { useState } from "react"
-var Buffer = require('buffer/').Buffer
 
 // const ecies = require("ecies-parity");
 // const ecies = require('eciesjs');
 // import * as ecies from "ecies-wasm";
 
-export default function VCs({VCSelection, holder, privkeyhex}) {
+export default function VCs({ VCSelection, holder, privkeyhex }) {
 
     const [selection, setSelection] = useState([]);
     const handleSelection = (newSelected, selected) => {
         console.log(newSelected, selected)
         var originalArrJson = JSON.stringify(selection);
-            var newElemJson = JSON.stringify(newSelected);
-            console.log(originalArrJson);
-            console.log(newElemJson)
+        var newElemJson = JSON.stringify(newSelected);
+        console.log(originalArrJson);
+        console.log(newElemJson)
 
-        if(selected)
-        {
+        if (selected) {
             //if(!selection.includes(newSelected))
-            if(originalArrJson.indexOf(newElemJson) == -1)
-            {
+            if (originalArrJson.indexOf(newElemJson) == -1) {
                 setSelection(selection => [...selection, newSelected]);
                 VCSelection(selection => [...selection, newSelected]);
             }
         }
-        else
-        {
+        else {
             //if(selection.includes(newSelected))
-            if(originalArrJson.indexOf(newElemJson) != -1)
-            {
+            if (originalArrJson.indexOf(newElemJson) != -1) {
                 var updated = [];
-                for(var i = 0; i < selection.length; i++)
-                {
+                for (var i = 0; i < selection.length; i++) {
                     var ithJson = JSON.stringify(selection[i]);
-                    if(ithJson != newElemJson)
+                    if (ithJson != newElemJson)
                         updated.push(selection[i]);
                 }
                 setSelection(updated);
@@ -52,32 +46,32 @@ export default function VCs({VCSelection, holder, privkeyhex}) {
     //    return r.data.decryptVCFallback.vcJwt;
     //}
 
-    const {error, loading, data} = useQuery(GET_DECRYPTEDVC_FALLBACK, {variables: {privkeyhex: privkeyhex}});
+    const { error, loading, data } = useQuery(GET_DECRYPTEDVC_FALLBACK, { variables: { privkeyhex: privkeyhex } });
 
-    if(loading) return <Spinner />;
-    if(error) return <p> Error </p>
+    if (loading) return <Spinner />;
+    if (error) return <p> Error </p>
 
-    if(data && !loading && !error) {
-                // vc = await tryDecrypt(vcEncHex, privkeyhex);
-                // vc = ecies.decrypt(privateKey, vcEnc).toString();
-            }
+    if (data && !loading && !error) {
+        // vc = await tryDecrypt(vcEncHex, privkeyhex);
+        // vc = ecies.decrypt(privateKey, vcEnc).toString();
+    }
 
     //console.log(data);
 
     return (<>
-        {   
+        {
             data.decryptVCFallback.length > 0 && (
-            <div className="row mt-3">
-                { data.decryptVCFallback.map((decVC) => (
-                    
-            <VCCard handleSelection={handleSelection} vc={decVC} />
+                <div className="row mt-3">
+                    {data.decryptVCFallback.map((decVC) => (
 
-                ))}
-            </div>
+                        <VCCard handleSelection={handleSelection} vc={decVC} />
+
+                    ))}
+                </div>
             )
-            
+
         }
-        
+
     </>);
 
 }

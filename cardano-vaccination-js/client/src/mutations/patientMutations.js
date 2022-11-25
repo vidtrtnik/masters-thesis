@@ -6,10 +6,10 @@ const ADD_PATIENT = gql`
         {
             id
             did
-email
-name
-zzzs_num
-cardano_address
+            email
+            name
+            zzzs_num
+            cardano_address
         }
     }
 `
@@ -19,9 +19,9 @@ const DELETE_PATIENT = gql`
         deletePatient(id: $id) {
             id
             did
-email
-name
-zzzs_num
+            email
+            name
+            zzzs_num
         }
     }
 `;

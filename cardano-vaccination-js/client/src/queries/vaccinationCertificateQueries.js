@@ -97,7 +97,7 @@ const GET_VERIFIEDVP_FALLBACK = gql`
     }
     `;
 
-    const VERIFY_VP = gql`
+const VERIFY_VP = gql`
     query verifyVP($jwt: String!) {
         verifyVP(jwt: $jwt) {
             presentation
@@ -107,7 +107,7 @@ const GET_VERIFIEDVP_FALLBACK = gql`
     }
     `;
 
-    const VERIFY_VC = gql`
+const VERIFY_VC = gql`
     query verifyVC($jwt: String!) {
         verifyVC(jwt: $jwt) {
             status

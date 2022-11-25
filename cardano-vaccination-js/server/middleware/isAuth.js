@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const VaccinationCenter = require('../models/VaccinationCenter');
 const Patient = require('../models/Patient');
+require('dotenv').config();
 
 module.exports = async (req, res, next) => {
     const authHeader = req.get("authorization");
@@ -21,7 +22,7 @@ module.exports = async (req, res, next) => {
     try {
         console.log("VERIFIYING TOKEN:");
         console.log(token);
-        decodedToken = jwt.verify(token, 'UNSAFE_STRING');
+        decodedToken = jwt.verify(token, process.env.RANDOM_STRING);
     }catch(err) {
         req.isAuth = false;
         return next();

@@ -324,11 +324,6 @@ async function createNewVP(server, issuerDid, issuerAuthKey, verifierDid, vcJwts
   var vpPayload = await utils.createVPPayload(vcJwtArray);
   //console.log("PAYLOAD1: ", vpPayload);
 
-  //vpPayload = JSON.stringify(JSON.parse(vpPayload));
-  //console.log("PAYLOAD2: ", vpPayload);
-  //vpPayload = `{vp:{@context': [ 'https://www.w3.org/2018/credentials/v1' ],type: [ 'VerifiablePresentation' ],verifiableCredential: [ 'eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImRlZ3JlZSI6eyJ0eXBlIjoidmFjY3kxIiwibmFtZSI6ImRpZDphZGE6RWlENDdhSXhlRGJXWk40bVZSWmZkd0VETWZtbUsyQ2hiTjdWbko5SjFBQTFhQSJ9fX0sIm5iZiI6MTU2Mjk1MDI4MiwiaXNzIjoiZGlkOmFkYTpFaUNVYjdfbHk5ZHNYQnd1RkR2Qll4YUQ5dTBMN0RzNG5XTGdMZ1M4ekVjZWRBIn0.R1FxzVh1VuajKoDAtG-ia8eTejvgLMFmkMs-bquVexjNj-0QY82W0l1yAkl-PkR2eJhSXdrsYY4MrH_f8SL4LA']}}`
-  //console.log("PAYLOAD2: ", vpPayload);
-
   const vpJwt = await didjwtvc.createVerifiablePresentationJwt(vpPayload, issuer);
   console.log("VPJWT:", vpJwt);
 
@@ -356,11 +351,6 @@ async function createNewVP(server, issuerDid, issuerAuthKey, verifierDid, vcJwts
 
   return { vpJwt: vpJwt, vpJwtEnc: vpJwtEnc };
 }
-
-//module.exports = {
-//  postRequestGenDID: async function() {},
-//  postRequestDeactivateDID: async function() {},
-//};
 
 module.exports = {
   postRequestGenDID, postRequestDeactivateDID, createNewVC, createNewVP, verifyVC, verifyVP, createNewVC_Small

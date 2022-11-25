@@ -10,36 +10,36 @@ import { MdAddCircleOutline } from "react-icons/md"
 
 export default function AddVerifierModal() {
 
-    const [show, setShow] = useState(false);
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
-    const [did, setDid] = useState('');
-    const [name, setName] = useState('');
-    const [address, setAddress] = useState('');
+  const [did, setDid] = useState('');
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
 
-    const [addVerifier] = useMutation(ADD_VERIFIER, {
-        variables: { did, name, address },
-        refetchQueries: [{ query: GET_VERIFIERS }],
-    });
-    
-    const onSubmit = (e) => {
-        e.preventDefault();
-        console.log(did, name);
+  const [addVerifier] = useMutation(ADD_VERIFIER, {
+    variables: { did, name, address },
+    refetchQueries: [{ query: GET_VERIFIERS }],
+  });
 
-        if(name === '')
-            return alert();
+  const onSubmit = (e) => {
+    e.preventDefault();
+    console.log(did, name);
 
-        addVerifier(did, name, address);
+    if (name === '')
+      return alert();
 
-        setDid('');
-        setName('');
-    };
-    
+    addVerifier(did, name, address);
+
+    setDid('');
+    setName('');
+  };
+
   return (
     <>
-    <Button className="m-3" variant="primary" onClick={handleShow}>
-    <IconContext.Provider value={{ color: "white", size: '1.7rem' }}>
+      <Button className="m-3" variant="primary" onClick={handleShow}>
+        <IconContext.Provider value={{ color: "white", size: '1.7rem' }}>
           <><MdAddCircleOutline /></>
         </IconContext.Provider>
         <br></br>
@@ -52,23 +52,23 @@ export default function AddVerifierModal() {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+            <Form.Group className="mb-3" >
               <Form.Label>Name</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Name"
                 autoFocus
-                onChange={ (e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
               />
             </Form.Group>
-            
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+
+            <Form.Group className="mb-3" >
               <Form.Label>Address</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Address"
                 autoFocus
-                onChange={ (e) => setAddress(e.target.value)}
+                onChange={(e) => setAddress(e.target.value)}
               />
             </Form.Group>
 

@@ -1,25 +1,25 @@
 import { gql, useQuery } from '@apollo/client'
 import PatientRow from './PatientRow.jsx';
 import Spinner from './Spinner.jsx';
-import {GET_PATIENTS} from '../queries/patientQueries'
+import { GET_PATIENTS } from '../queries/patientQueries'
 import { GET_DOSAGES } from '../queries/dosageQueries.js';
 import DosageRow from './DosageRow.jsx';
 import Table from 'react-bootstrap/Table';
 import Card from 'react-bootstrap/Card';
-import { FaUserInjured, FaHouseUser} from 'react-icons/fa';
+import { FaUserInjured, FaHouseUser } from 'react-icons/fa';
 import { IconContext } from "react-icons";
 import { TbVaccine } from "react-icons/tb";
 
 export default function Storages() {
-    const {loading, error, data } = useQuery(GET_DOSAGES)
+    const { loading, error, data } = useQuery(GET_DOSAGES)
     console.log("---")
     console.log(data)
 
-    if(loading) return <Spinner />
-    if(error) return <p> Something went wrong... </p>
+    if (loading) return <Spinner />
+    if (error) return <p> Error... </p>
     return (<>
-        
-            { !loading && !error && (
+
+        {!loading && !error && (
             <Card className='users-card'>
                 <Card.Title className="mb-3"><TbVaccine /> Storages</Card.Title>
 
@@ -40,7 +40,7 @@ export default function Storages() {
                     </tbody>
                 </Table>
             </Card>
-            )}
+        )}
     </>
     );
 }
