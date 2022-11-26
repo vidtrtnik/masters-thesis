@@ -13,8 +13,8 @@ const ADD_CENTRE = gql`
 `
 
 const DELETE_CENTRE = gql`
-    mutation addVaccinationCentre($did: String!, $name: String!) {
-        addVaccinationCentre(did: $did, name: $name) 
+    mutation deleteCentre($id: ID!) {
+        deleteCentre(id: $id) 
         {
             id
             did

@@ -3,9 +3,7 @@ import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import { FaSearch, FaCertificate } from "react-icons/fa";
 import ListGroup from 'react-bootstrap/ListGroup';
-
 import { Link } from "react-router-dom";
-import { useState } from "react"
 
 function getVCTypes(vp) {
   console.log(vp)
@@ -49,12 +47,8 @@ function getDate(vp) {
 }
 
 export default function VPCardLocal({ vp }) {
-  const [selected, setSelected] = useState(false);
-  //console.log(vc);
   var json = vp;
   console.log(json)
-
-  //console.log(selected)
 
   return (
     <Card className="mb-2" >

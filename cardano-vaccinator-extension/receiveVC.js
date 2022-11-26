@@ -134,7 +134,7 @@ function processJWT(vc) {
       //vcsDiv.appendChild(vcDiv);
 
       if (obj.payload.vc.credentialSubject.vaccine.medicinalProductName !== undefined)
-        addTableElement("verifiableCredentials", [obj.payload.vc.credentialSubject.vaccine.medicinalProductName + " (" + obj.payload.vc.credentialSubject.vaccine.marketingAuthorizationHolder + ")", obj.payload.vc.credentialSubject.recipient.givenName, obj.payload.vc.issuanceDate, result.data.verifyVC.status, btn]);
+        addTableElement("verifiableCredentials", [obj.payload.vc.credentialSubject.vaccine.medicinalProductName + " (" + obj.payload.vc.credentialSubject.vaccine.marketingAuthorizationHolder + ")", obj.payload.vc.credentialSubject.recipient.givenName + " " + obj.payload.vc.credentialSubject.recipient.familyName, obj.payload.vc.issuanceDate, result.data.verifyVC.status, btn]);
       else
         addTableElement("verifiableCredentials", [obj.payload.vc.credentialSubject.vaccine.atcCode.substring(0, 20), obj.payload.vc.credentialSubject.recipient.did.substring(0, 20) + "...", obj.payload.vc.issuanceDate, result.data.verifyVC.status, btn]);
 

@@ -51,29 +51,15 @@ export default function VCs({ VCSelection, holder, privkeyhex }) {
     if (loading) return <Spinner />;
     if (error) return <p> Error </p>
 
-    if (data && !loading && !error) {
-        // vc = await tryDecrypt(vcEncHex, privkeyhex);
-        // vc = ecies.decrypt(privateKey, vcEnc).toString();
-    }
-
-    //console.log(data);
-
     return (<>
         {
-            data.decryptVCFallback.length > 0 && (
+            data && !loading && !error && data.decryptVCFallback.length > 0 && (
                 <div className="row mt-3">
                     {data.decryptVCFallback.map((decVC) => (
-
                         <VCCard handleSelection={handleSelection} vc={decVC} />
-
                     ))}
                 </div>
             )
-
         }
-
     </>);
-
 }
-
-// {selection}

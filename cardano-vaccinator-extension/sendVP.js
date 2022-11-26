@@ -45,9 +45,7 @@ function getTmpDID() {
 
       console.log(commid, did, didkeysau, didkeysag);
     });
-
 }
-
 
 var invitationText = document.getElementById("invitation2");
 console.log(invitationText)
@@ -118,7 +116,6 @@ function processJWT(vc) {
 
       addTableElement("verifiableCredentials", [obj.payload.vc.credentialSubject.degree.type, obj.payload.vc.credentialSubject.degree.name, result.data.verifyVC.status, btn]);
 
-
     });
 }
 
@@ -180,9 +177,6 @@ document.getElementById("send-vp").addEventListener("click", () => {
 
             //const obj = JSON.parse(result.data.verifyVC.credential);
           })
-
       })
-
-
   });
 });

@@ -1,7 +1,4 @@
 import { useState } from 'react'
-import { useMutation } from '@apollo/client'
-import { UPDATE_PATIENT } from '../mutations/patientMutations';
-import { GET_VERIFIERS } from '../queries/verifierQueries';
 import { FaTrash, FaEdit } from 'react-icons/fa';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';

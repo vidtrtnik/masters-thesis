@@ -8,6 +8,7 @@ import { BiLogInCircle } from 'react-icons/bi'
 import { IconContext } from "react-icons";
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import { Navigate, useNavigate } from 'react-router-dom'
+import { FaUserInjured, FaHouseUser } from 'react-icons/fa';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -32,6 +33,11 @@ export default function Login() {
   return (
     <>
       <div class="title">
+        <div className='card-icon'>
+          <IconContext.Provider value={{ className: "shared-class", size: '9rem' }}>
+            <><FaHouseUser /></>
+          </IconContext.Provider>
+        </div>
         <h2>Login</h2>
         <h2>Central Authority</h2>
         <br></br>
@@ -46,20 +52,16 @@ export default function Login() {
         </div>
 
         <Form className="auth-form">
-          <Form.Group className="mb-3" controlId="formDID">
+          <Form.Group className="mb-3" controlId="formUsername">
             <Form.Label>Username</Form.Label>
-            <Form.Control type="text" placeholder="janez" value={username} onChange={(e) => setUsername(e.target.value)} />
-            <Form.Text className="text-muted">
-
-            </Form.Text>
+            <Form.Control type="text" placeholder="user" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <Form.Text className="text-muted"></Form.Text>
           </Form.Group>
 
           <Form.Group className="mb-3" controlId="formKey">
             <Form.Label>Password</Form.Label>
-            <Form.Control type="password" maxLength={64} placeholder="novak" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <Form.Text className="text-muted">
-
-            </Form.Text>
+            <Form.Control type="password" maxLength={64} placeholder="pass" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Form.Text className="text-muted"></Form.Text>
           </Form.Group>
 
           <ButtonGroup className='auth-buttons'>

@@ -8,17 +8,7 @@ import { useMutation, useLazyQuery } from "@apollo/client";
 import { CREATE_PEER_DID, DIDCOMM_SEND } from "../mutations/didcommMutations"
 import { ApolloProvider, ApolloClient, InMemoryCache, createHttpLink, } from '@apollo/client'
 import Form from 'react-bootstrap/Form';
-
-// https://stackoverflow.com/a/38552302
-function parseJwt(token) {
-  var base64Url = token.split('.')[0];
-  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
-
-  return JSON.parse(jsonPayload);
-};
+import jwt_decode from "jwt-decode";
 
 const cache = new InMemoryCache({
   typePolicies: {
@@ -152,7 +142,11 @@ export default function IssueVCModal({ data, VCSelection }) {
 
           <Form.Group className="mb-3" >
             <Form.Label>Recipient invitation</Form.Label>
-            <Form.Control as="textarea" rows={3} value={invitationText} onChange={(e) => { setInvitationText(e.target.value); setInvitation(parseJwt(e.target.value)); }} />
+            <Form.Control as="textarea" rows={3} value={invitationText} onChange={(e) => {
+              console.log(e.target.value);
+              setInvitationText(e.target.value);
+              setInvitation(jwt_decode(e.target.value, { header: true }));
+            }} />
           </Form.Group>
         </Modal.Body>
         {invitation && <p><b>Recipient Peer DID: </b>{invitation.from.substring(0, 30) + "..."}</p>}

@@ -1,6 +1,7 @@
 const { WalletServer, AssetWallet, TokenWallet, AddressWallet, Seed } = require('cardano-wallet-js');
 const { GQL_QUERY_GETMETADATAS } = require('../queries/gqlQueries.js');
 const axios = require('axios');
+const ipfs = require('../helpers/ipfs-utils');
 
 async function pickWallet(wallets) {
   var passphrase = null;
@@ -156,9 +157,14 @@ async function sendNFT(policyId, address) {
   return txId;
 }
 
-async function mintNFT(address) {
+async function mintNewNFT() {
   console.log("mintNFT...")
-  console.log(address)
+
+  var imgBuffer = await ipfs.generateImage();
+  console.log(imgBuffer)
+
+  var ipfsRes = await ipfs.ipfsAddBuf(imgBuffer);
+  console.log(ipfsRes);
 
   let walletServer = WalletServer.init(process.env.WALLET_SERVER);
 
@@ -166,8 +172,6 @@ async function mintNFT(address) {
   let ttl = info.node_tip.absolute_slot_number * 12000;
 
   let wallets = await walletServer.wallets();
-  //console.log("wallets:");
-  //console.log(wallets);
 
   var wallet_id = null;
   for (const w of wallets) {
@@ -177,7 +181,6 @@ async function mintNFT(address) {
   }
   console.log("ShelleyFaucetWallet ID: ", wallet_id);
   let wallet = await walletServer.getShelleyWallet(wallet_id);
-  //console.log(wallet);
 
   let addresses = (await wallet.getUnusedAddresses()).slice(0, 1);
 
@@ -203,7 +206,7 @@ async function mintNFT(address) {
     [policyId]: {
       [process.env.TOKEN_NAME]: {
         "name": process.env.TOKEN_NAME,
-        "image": address
+        "image": ipfsRes.path
       }
     }
   }
@@ -397,7 +400,7 @@ async function createAndSignTransaction2(vacdata, dosage, label, action) {
 
 
 module.exports = {
-  mintNFT,
+  mintNewNFT,
   sendNFT,
   getTransactionsWithLabel,
   createAndSignTransaction,

@@ -48,9 +48,7 @@ document.getElementById("upload-keys").addEventListener("click", () => {
         var contents = e.target.result;
         var json = JSON.parse(contents);
         document.getElementById('did').value = json.DID;
-        /* Handle your document contents here */
-        // document.location.href = url_array; // My extension's logic
-        //console.log(contents)
+
         chrome.storage.local.set({
           did: json.DID,
           json_keys: contents,
@@ -99,17 +97,22 @@ function loadJsonKeys() {
     else {
       console.log("UPLOADED KEYS");
       document.getElementById('keyhex').value = json.KEYS.authKeyPair.privateKeys.hex;
-      document.getElementById('keyhex2').value = json.aggreementKeyPair.privateKeys.hex;
+      var agkp = null;
+      if (json.aggreementKeyPair !== undefined)
+        agkp = json.aggreementKeyPair;
+      else if (json.KEYS.aggreementKeyPair !== undefined)
+        agkp = json.KEYS.aggreementKeyPair;
+      document.getElementById('keyhex2').value = agkp.privateKeys.hex;
       chrome.storage.local.set({
         keyhex: json.KEYS.authKeyPair.privateKeys.hex,
-        keyhex2: json.aggreementKeyPair.privateKeys.hex,
+        keyhex2: agkp.privateKeys.hex,
         authKeyPair_hex: json.KEYS.authKeyPair.privateKeys.hex,
         authKeyPair_jwk_d: json.KEYS.authKeyPair.privateKeys.jwk.d,
         authKeyPair_jwk_x: json.KEYS.authKeyPair.privateKeys.jwk.x,
         authKeyPair_jwk_y: json.KEYS.authKeyPair.privateKeys.jwk.y,
-        aggreementKeyPair_hex: json.aggreementKeyPair.privateKeys.hex,
-        aggreementKeyPair_jwk_d: json.aggreementKeyPair.privateKeys.jwk.d,
-        aggreementKeyPair_jwk_x: json.aggreementKeyPair.privateKeys.jwk.x
+        aggreementKeyPair_hex: agkp.privateKeys.hex,
+        aggreementKeyPair_jwk_d: agkp.privateKeys.jwk.d,
+        aggreementKeyPair_jwk_x: agkp.privateKeys.jwk.x
       }, function () {
         console.log("Keys saved!");
       });
@@ -151,9 +154,9 @@ function loadVerifiableCredentialsFromBlockchain() {
         var type_code = verifiedVCJson.payload.vc.credentialSubject.vaccine.atcCode;
 
         if (type_name !== undefined)
-          addTableElement("verifiableCredentialsBlockchain", [transactionId.substring(0, 10) + "...", issuer.substring(0, 25) + "...", "10.2022", type_name, null])
+          addTableElement("verifiableCredentialsBlockchain", [transactionId.substring(0, 10) + "...", issuer.substring(0, 20) + "...", verifiedVCJson.payload.vc.credentialSubject.recipient.familyName, type_name, verifiedVCJson.payload.vc.issuanceDate, null])
         else
-          addTableElement("verifiableCredentialsBlockchain", [transactionId.substring(0, 10) + "...", issuer.substring(0, 25) + "...", "10.2022", type_code.substring(0, 10) + "...", null])
+          addTableElement("verifiableCredentialsBlockchain", [transactionId.substring(0, 10) + "...", issuer.substring(0, 20) + "...", verifiedVCJson.payload.vc.credentialSubject.recipient.familyName, type_code.substring(0, 10) + "...", verifiedVCJson.payload.vc.issuanceDate, null])
       }
     });
 }
@@ -226,7 +229,7 @@ function loadVerifiablePresentations() {
         var transactionId = r.transactionId;
         var verifiedVPJson = JSON.parse(r.verifiedVP);
 
-        addTableElement("verifiablePresentations", [transactionId.substring(0, 10) + "...", document.getElementById('did').value.substring(0, 25) + "...", "08.2022"]) //, verifiedVPJson])
+        addTableElement("verifiablePresentations", [transactionId.substring(0, 10) + "...", document.getElementById('did').value.substring(0, 25) + "...", "08.2022"])
       }
     });
 }
@@ -325,86 +328,3 @@ document.getElementById("auth").addEventListener("click", () => {
   loadVerifiableCredentials();
   loadVerifiablePresentations();
 });
-
-
-/*
-document.getElementById("auth").addEventListener("click", () => {
-
-  fetch('http://localhost:5000/graphql', {
-  method: 'POST',
-  headers: {
-  'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-  query: `
-  query getAuthChallenge($did: String!) {
-    authChallenge(did: $did) {
-      data
-    }
-  }
-    `,
-  variables: {
-    did: document.getElementById('did').value,
-  },
-  }),
-})
-  .then((res) => res.json())
-  .then((result) => {
-  var challenge = result.data.authChallenge.data;
-  console.log(challenge)
-  var keyhex = document.getElementById('keyhex').value
-  var bytes = new Uint8Array(Math.ceil(challenge.length / 2));
-  for (var i = 0; i < bytes.length; i++) bytes[i] = parseInt(challenge.substr(i * 2, 2), 16);
-  console.log(bytes);
-  var challengeArr = bytes;
-  console.log(challengeArr)
-
-  //const privateKey = Secp256k1.uint256(keyArr, 16);
-  //console.log(privateKey.toString(16))
-
-  //const digest = Secp256k1.uint256(challenge, 16)
-  //const sig = Secp256k1.ecsign(privateKey, digest)
-  //console.log(sig);
-
-  var EC = elliptic.ec;
-  var ec = new EC('secp256k1');
-  var key = ec.keyFromPrivate(keyhex, 'hex');
-  //console.log("Public: ", key.getPublic('hex'));
-  //console.log("Private: ", key.getPrivate('hex'));
-  var signature = key.sign(challengeArr);
-  console.log(signature)
-  var sig_der = signature.toDER();
-  var sig_ecdsa = signature.toECSDA();
-
-  var convertedBack = '';
-  for (var i = 0; i < sig_ecdsa.length; i++) {
-  if (sig_der[i] < 16) convertedBack += '0';
-  convertedBack += sig_ecdsa[i].toString(16);
-  }
-  console.log("SignatureECDSA: ", convertedBack);
-
-  fetch('http://localhost:5000/graphql', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query: `
-      query getAuthResponse($did: String!, $response: String!) {
-        authResponse(did: $did, response: $response) {
-          result
-          token
-        }
-      }
-      `,
-      variables: {
-      did: document.getElementById('did').value,
-      response: convertedBack,
-      },
-    }),
-    })
-  .then((res) => res.json())
-  .then((result) => {console.log(result)});
-  })
-});
-*/

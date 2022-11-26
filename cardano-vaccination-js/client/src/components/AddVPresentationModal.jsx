@@ -95,6 +95,7 @@ export default function AddVPresentationModal({ vpdata, VCSelection }) {
 
         </Modal.Body>
 
+        <p>Select verifier DID:</p>
         <Form.Select aria-label="Select verifier" value={verifierIdd} onChange={(e) => setVerifierId(e.target.value)}>
           <option>Select</option>
           {data.verifiers.map((verifer) => (

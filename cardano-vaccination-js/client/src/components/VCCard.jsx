@@ -4,9 +4,7 @@ import Card from 'react-bootstrap/Card';
 import { TbVaccine } from "react-icons/tb";
 import { FaSearch, FaCertificate } from "react-icons/fa";
 import { gql, useQuery } from '@apollo/client'
-
 import { VERIFY_VC } from '../queries/vaccinationCertificateQueries';
-
 import { Link } from "react-router-dom";
 import { useState } from "react"
 import ListGroup from 'react-bootstrap/ListGroup';
@@ -14,15 +12,8 @@ import { GrTransaction } from "react-icons/gr";
 
 export default function VCCard({ handleSelection, vc }) {
   const [selected, setSelected] = useState(false);
-
-  const [jwt, setJwt] = useState("");
-  const [status, setStatus] = useState("");
-
-  //console.log(vc);
   var json = JSON.parse(vc.verifiedVC, null, 2);
   console.log(json)
-
-  //console.log(selected)
 
   const { loading, error, data } = useQuery(VERIFY_VC, {
     variables: { jwt: vc.vcJwt }

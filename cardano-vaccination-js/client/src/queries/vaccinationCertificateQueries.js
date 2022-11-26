@@ -93,6 +93,7 @@ const GET_VERIFIEDVP_FALLBACK = gql`
             holder
             verifiedVP
             qr_cid
+            status
         }
     }
     `;

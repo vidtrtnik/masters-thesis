@@ -1,13 +1,9 @@
 import { gql, useQuery } from '@apollo/client'
-import PatientRow from './PatientRow.jsx';
 import Spinner from './Spinner.jsx';
-import { GET_PATIENTS } from '../queries/patientQueries'
 import { GET_DOSAGES } from '../queries/dosageQueries.js';
 import DosageRow from './DosageRow.jsx';
 import Table from 'react-bootstrap/Table';
 import Card from 'react-bootstrap/Card';
-import { FaUserInjured, FaHouseUser } from 'react-icons/fa';
-import { IconContext } from "react-icons";
 import { TbVaccine } from "react-icons/tb";
 
 export default function Storages() {

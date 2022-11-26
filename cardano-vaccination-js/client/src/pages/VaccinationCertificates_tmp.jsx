@@ -1,7 +1,4 @@
-import Patients from '../components/Patients';
 import VaccinationCertificates from '../components/VaccinationCertificates';
-import AddPatientModal from '../components/AddPatientModal';
-import AddVaccinationCertificateModal from '../components/AddVaccinationCertificateModal';
 import { GET_PATIENTS } from "../queries/patientQueries";
 import { GET_DOSAGES_BLOCKCHAIN, GET_DOSAGES } from "../queries/dosageQueries";
 import { useMutation, useQuery, useLazyQuery } from "@apollo/client"
@@ -9,7 +6,6 @@ import { useState } from 'react'
 import { ADD_VACCINATIONCERTIFICATE } from "../mutations/vaccinationCertificateMutations";
 import { GET_VACCINATIONCERTIFICATE, GET_VACCINATIONCERTIFICATES } from "../queries/vaccinationCertificateQueries";
 import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -17,8 +13,6 @@ import Col from 'react-bootstrap/Col';
 import InputGroup from 'react-bootstrap/InputGroup';
 import { IconContext } from "react-icons";
 import { TbVaccine } from "react-icons/tb";
-import { ImUserCheck } from "react-icons/im"
-import { FaUserInjured, FaHouseUser, FaInfo } from 'react-icons/fa';
 import IssueVCModal from "../components/IssueVCModal"
 import { MdAddCircleOutline } from "react-icons/md"
 

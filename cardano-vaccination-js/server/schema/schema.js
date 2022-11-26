@@ -14,7 +14,7 @@ const utils = require('../helpers/did-vc-utils.js');
 const vaccinatorutils = require('../helpers/vaccinator-utils');
 
 const { DidResolveType, DidType, VerifiableCredentialType, VerifiablePresentationType, PatientType, VaccinationCertificateType, VaccinationCenterType, VerifierType, VaccinationStorageType, RevocationVCType } = require('./types.js');
-const { resolveQuery_login, resolveMutation_addVCS, resolveMutation_addVaccinationCertificateS, resolveMutation_addVP, resolveMutation_addVC, resolveQuery_didResolve, resolveQuery_getVPsFromCardanoBlockchain, resolveQuery_getVCsFromCardanoBlockchain, resolveMutation_addPatient, resolveMutation_deletePatient, resolveMutation_addVaccinationCertificate, resolveMutation_addVerifiablePresentation, resolveMutation_addVaccinationCentre, resolveMutation_addVerifier, resolveMutation_addVaccinationStorage, resolveQuery_authChallenge, resolveQuery_authResponse, resolveQuery_decryptTest, resolveQuery_decryptVCFallback, resolveQuery_verifyVPFallback, resolveMutation_mintNFT, resolveQuery_getVaccinationStoragesFromBlockchain } = require('./resolveFunctions');
+const { resolveQuery_login, resolveMutation_addVCS, resolveMutation_addVaccinationCertificateS, resolveMutation_addVP, resolveMutation_addVC, resolveQuery_didResolve, resolveQuery_getVPsFromCardanoBlockchain, resolveQuery_getVCsFromCardanoBlockchain, resolveMutation_addPatient, resolveMutation_deletePatient, resolveMutation_addVaccinationCertificate, resolveMutation_addVerifiablePresentation, resolveMutation_addVaccinationCentre, resolveMutation_addVerifier, resolveMutation_addVaccinationStorage, resolveQuery_authChallenge, resolveQuery_authResponse, resolveQuery_decryptTest, resolveQuery_decryptVCFallback, resolveQuery_verifyVPFallback, resolveMutation_mintNFT, resolveQuery_getVaccinationStoragesFromBlockchain, resolveMutation_deleteCentre } = require('./resolveFunctions');
 
 require('dotenv').config();
 
@@ -105,7 +105,7 @@ const RootQuery = new GraphQLObjectType({
                 var vp = vpResult.verifiedVP;
                 if (vp !== '')
                     status = "Valid"
-                //console.log(vp)
+
                 var vcs = vpResult.verifiedVCS;
                 return { presentation: JSON.stringify(vp), credentials: JSON.stringify(vcs), status: status };
             }
@@ -153,6 +153,7 @@ const RootQuery = new GraphQLObjectType({
                     holder: { type: GraphQLString },
                     verifiedVP: { type: GraphQLString },
                     qr_cid: { type: GraphQLString },
+                    status: { type: GraphQLString },
                 })
             })),
             args: {
@@ -630,7 +631,7 @@ const mutation = new GraphQLObjectType({
                 })
             }),
             args: {
-                description: { type: GraphQLNonNull(GraphQLString) },
+                address: { type: GraphQLNonNull(GraphQLString) },
             },
             async resolve(parent, args, req) {
                 const resolveRes = await resolveMutation_mintNFT(parent, args);

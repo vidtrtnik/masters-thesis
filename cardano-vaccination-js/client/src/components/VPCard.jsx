@@ -6,25 +6,14 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import { GrTransaction } from "react-icons/gr";
 
 import { Link } from "react-router-dom";
-import { useState } from "react"
 import Image from 'react-bootstrap/Image'
-
-// https://stackoverflow.com/a/38552302
-function parseJwt(token) {
-  var base64Url = token.split('.')[1];
-  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
-
-  return JSON.parse(jsonPayload);
-};
+import jwt_decode from "jwt-decode";
 
 function getVCTypes(vp) {
   var types = []
   for (var i = 0; i < vp.verifiableCredential.length; i++) {
     var vc = vp.verifiableCredential[i];
-    var type = parseJwt(vc.proof.jwt).vc.credentialSubject.vaccine.medicinalProductName
+    var type = jwt_decode(vc.proof.jwt).vc.credentialSubject.vaccine.medicinalProductName
     types.push(type)
   }
 
@@ -55,13 +44,20 @@ function getDate(vp) {
   return dates.join();
 }
 
-export default function VPCard({ vp }) {
-  const [selected, setSelected] = useState(false);
-  //console.log(vc);
-  var json = JSON.parse(vp.verifiedVP, null, 2);
-  console.log(json)
+function getStatus(statStr) {
+  console.log(statStr)
+  var statusArray = statStr.split(",");
+  var status = true;
+  for(var i = 0; i < statusArray.length; i++)
+    if(statusArray[i] !== "Valid")
+      status = false;
 
-  //console.log(selected)
+  return status;
+}
+
+export default function VPCard({ vp }) {
+  var json = JSON.parse(vp.verifiedVP, null, 2);
+  var status = getStatus(vp.status)
 
   return (
     <div className='col-md-4' >
@@ -87,6 +83,7 @@ export default function VPCard({ vp }) {
             <p className="small">Issuer(s): <strong>{getIssuers(json.verifiablePresentation).substring(0, 35)}...</strong></p>
             <p className="small">Vaccine(s): <strong>{getVCTypes(json.verifiablePresentation).substring(0, 35)}</strong></p>
             <p className="small">Date: <strong>{getDate(json.verifiablePresentation).substring(0, 35)}</strong></p>
+            <p className="small">Status: <strong>{status ? 'Valid': 'Revoked'}</strong></p>
           </Card.Body>
 
           <ListGroup.Item className="d-flex justify-content-between align-items-center">
@@ -103,6 +100,5 @@ export default function VPCard({ vp }) {
     </div>
   )
 }
-
 
 // <Card.Link href={`http://0.0.0.0:8081/ipfs/${vp.qr_cid}`}><strong>QR: {vp.qr_cid}</strong></Card.Link>

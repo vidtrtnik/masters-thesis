@@ -22,6 +22,7 @@ const eciesjs = require('eciesjs');
 const QRCode = require('qrcode');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const axios = require('axios');
 
 require('dotenv').config();
 
@@ -83,7 +84,6 @@ async function resolveQuery_decryptVCFallback(parent, args) {
   }
 
   return vcJwts;
-
 }
 
 async function resolveQuery_verifyVPFallback(parent, args) {
@@ -93,25 +93,26 @@ async function resolveQuery_verifyVPFallback(parent, args) {
     for (const meta of tx.metadata) {
       if (meta.key === "8374347737") {
         try {
-            var vpJwtD = null;
-            try {
-              const privateKey = Buffer.from(args.verifierKey, 'hex');
-              console.log(privateKey)
-              const contents = Buffer.from(meta.value["2"].join(''), 'hex')
-              vpJwtD = eciesjs.decrypt(privateKey, contents).toString();
-              //console.log(vpJwtD)
+          var vpJwtD = null;
+          try {
+            var ipfsVp = await axios.get("http://0.0.0.0:8081/ipfs/" + meta.value["3"]);
+            const privateKey = Buffer.from(args.verifierKey, 'hex');
+            const contents = Buffer.from(meta.value["2"].join(''), 'hex');
+            const contents2 = ipfsVp.data;
+
+            vpJwtD = eciesjs.decrypt(privateKey, contents).toString();
+          }
+          catch (e) { console.log(e) }
+          vps.push(
+            {
+              transactionId: tx.hash,
+              holder: meta.value["0"],
+              action: meta.value["1"],
+              vpJwt: vpJwtD,
+              vp_cid: meta.value["3"],
+              qr_cid: meta.value["4"]
             }
-            catch (e) { console.log(e) }
-            vps.push(
-              {
-                transactionId: tx.hash,
-                holder: meta.value["0"],
-                action: meta.value["1"],
-                vpJwt: vpJwtD,
-                vp_cid: meta.value["3"],
-                qr_cid: meta.value["4"]
-              }
-            );
+          );
 
         }
         catch (e) { console.log(e) }
@@ -125,8 +126,7 @@ async function resolveQuery_verifyVPFallback(parent, args) {
   for (var i = 0; i < vps.length; i++) {
     const vpJwtDec = vps[i].vpJwt;
     var decodedJwt = jwt_decode(vpJwtDec);
-    console.log(decodedJwt)
-    if(decodedJwt.iss !== args.holder)
+    if (decodedJwt.iss !== args.holder)
       continue;
 
     try {
@@ -142,7 +142,19 @@ async function resolveQuery_verifyVPFallback(parent, args) {
       const verifiedVP = await didjwtvc.verifyPresentation(vpJwtDec, localResolver);
       console.log("VERIFIED VP: ", verifiedVP);
 
-      vpJwts.push({ transactionId: vps[i].transactionId, issuer: decodedJwt.iss, action: vps[i].action, verifiedVP: JSON.stringify(verifiedVP), qr_cid: vps[i].qr_cid });
+      console.log(" vaccinatorutils.verifyVP(): ");
+      var verVP = await vaccinatorutils.verifyVP(vpJwtDec);
+      console.log(verVP)
+
+      vpJwts.push(
+        {
+          transactionId: vps[i].transactionId,
+          issuer: decodedJwt.iss,
+          action: vps[i].action,
+          verifiedVP: JSON.stringify(verifiedVP),
+          qr_cid: vps[i].qr_cid,
+          status: verVP.statusVCS.join(",")
+        });
     }
     catch (e) {
       console.log("ERROR: ", e);
@@ -150,7 +162,6 @@ async function resolveQuery_verifyVPFallback(parent, args) {
   }
 
   return vpJwts;
-
 }
 
 async function resolveQuery_decryptTest(parent, args, vcs) {
@@ -224,8 +235,8 @@ async function resolveQuery_authResponse(parent, args) {
 async function resolveQuery_didResolve(parent, args) {
   var response = { status: null, rmsg: null, did: null, did_doc: null };
   await utils.resolveDID(server, args.did)
-    .then(function (data) { /*console.log("resolve DID OK: ", data);*/ response.status = JSON.stringify(data.status); response.rmsg = "OK"; response.did = data.data.didDocument.id; response.did_doc = JSON.stringify(data.data.didDocument); })
-    .catch(function (error) { /*console.log("resolveDID error:",error);*/ response.status = JSON.stringify(error.response.status); response.rmsg = error.response.statusText; response.did = null; response.did_doc = null; })
+    .then(function (data) { response.status = JSON.stringify(data.status); response.rmsg = "OK"; response.did = data.data.didDocument.id; response.did_doc = JSON.stringify(data.data.didDocument); })
+    .catch(function (error) { response.status = JSON.stringify(error.response.status); response.rmsg = error.response.statusText; response.did = null; response.did_doc = null; })
 
   console.log(response);
   return response;
@@ -370,8 +381,8 @@ async function resolveMutation_addPatient(parent, args) {
   else {
     var response = { status: null, rmsg: null, did: null, did_doc: null };
     await utils.resolveDID(server, args.did)
-      .then(function (data) { /*console.log("resolve DID OK: ", data);*/ response.status = JSON.stringify(data.status); response.rmsg = "OK"; response.did = data.data.didDocument.id; response.did_doc = JSON.stringify(data.data.didDocument); })
-      .catch(function (error) { /*console.log("resolveDID error:",error);*/ response.status = JSON.stringify(error.response.status); response.rmsg = error.response.statusText; response.did = null; response.did_doc = null; })
+      .then(function (data) { response.status = JSON.stringify(data.status); response.rmsg = "OK"; response.did = data.data.didDocument.id; response.did_doc = JSON.stringify(data.data.didDocument); })
+      .catch(function (error) { response.status = JSON.stringify(error.response.status); response.rmsg = error.response.statusText; response.did = null; response.did_doc = null; })
     patient_did_doc = response.did_doc;
     patient_did_keys = response.did;
   }
@@ -556,13 +567,6 @@ async function resolveMutation_revokeDid(parent, args) {
 }
 
 async function resolveMutation_deletePatient(parent, args) {
-  //VaccinationCertificate.find({patientId: args.id}).then((vaccinationCertificates) => {
-  //    vaccinationCertificates.forEach(vaccinationCertificate => {
-  //        vaccinationCertificate.remove();
-  //    });
-  //});
-  //return Patient.findByIdAndRemove(args.id);
-
   const patient = await Patient.findById(args.id);
   console.log(patient);
   const did = await Did.findOne({}).where('did').equals(patient.did);
@@ -579,13 +583,6 @@ async function resolveMutation_deletePatient(parent, args) {
 }
 
 async function resolveMutation_deleteCentre(parent, args) {
-  //VaccinationCertificate.find({patientId: args.id}).then((vaccinationCertificates) => {
-  //    vaccinationCertificates.forEach(vaccinationCertificate => {
-  //        vaccinationCertificate.remove();
-  //    });
-  //});
-  //return Patient.findByIdAndRemove(args.id);
-
   const centre = await VaccinationCenter.findById(args.id);
   console.log(centre);
   const did = await Did.findOne({}).where('did').equals(centre.did);
@@ -607,12 +604,10 @@ async function resolveMutation_addVaccinationCertificate(parent, args) {
   const patient = await Patient.findById(args.patientId);
   const vaccine = await VaccinationStorage.findById(args.vaccineId);
 
-  //const issuerAuthKey = "1111111111111111111111111111111111111111111111111111111111111111";
   const issuerAuthKey = args.vcentreAuthKey;
   const issuerKey2 = args.vcentreKey2;
 
   const issuerDid = vcentre.did;
-  //const issuerDid = "did:ada:EiCUb7_ly9dsXBwuFDvBYxaD9u0L7Ds4nWLgLgS8zEcedA"; 
 
   console.log(patient);
   console.log(vcentre);
@@ -626,10 +621,8 @@ async function resolveMutation_addVaccinationCertificate(parent, args) {
     .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data); vcJwt = data.vcJwtEnc; counter = data.counter; })
     .catch(function (error) { console.log(error); })
 
-
-    var shasum = crypto.createHash('sha1')
-    var issuerHash = shasum.update(issuerDid).digest('hex');
-
+  var shasum = crypto.createHash('sha1')
+  var issuerHash = shasum.update(issuerDid).digest('hex');
 
   var transactionID = null;
   await cardanoblockchain.createAndSignTransaction(vcJwt, issuerHash, "8222462378", vaccine.code)
@@ -661,23 +654,27 @@ async function resolveMutation_addVaccinationCertificate(parent, args) {
 
   var keys = await utils.generateKeys(issuerAuthKey);
   var keys2 = await utils.generateKeys2(issuerKey2);
-  console.log(issuerKey2);
-  console.log(keys2);
 
-    /*
-  var ipfsRes = await ipfs.ipfsAdd(vcJwt);
-  console.log(ipfsRes);
+  /*
+var ipfsRes = await ipfs.ipfsAdd(vcJwt);
+console.log(ipfsRes);
 
-  const vp_qr = await QRCode.toBuffer("http://0.0.0.0:8081/ipfs/" + ipfsRes.path, {
-    type: 'png',
-    errorCorrectionLevel: 'H',
-  });
+const vp_qr = await QRCode.toBuffer("http://0.0.0.0:8081/ipfs/" + ipfsRes.path, {
+  type: 'png',
+  errorCorrectionLevel: 'H',
+});
 
-  var ipfsRes_QR = await ipfs.ipfsAddBuf(vp_qr);
-  console.log(ipfsRes_QR);
+var ipfsRes_QR = await ipfs.ipfsAddBuf(vp_qr);
+console.log(ipfsRes_QR);
 */
-  if (args.patientAuthKey)
-    console.log("PATIENT AUTH KEY: ", args.patientAuthKey);
+
+  try {
+    if (patient.cardano_address !== undefined && patient.cardano_address !== "None") {
+      var pid = await cardanoblockchain.mintNewNFT();
+      await cardanoblockchain.sendNFT(pid, patient.cardano_address);
+    }
+  }
+  catch (e) { console.log(e) }
 
   return vaccinationCertificate.save();
 }
@@ -699,8 +696,8 @@ async function resolveMutation_addVaccinationCertificateS(parent, args) {
     .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data); vcJwt = data.vcJwtEnc; counter = data.counter; })
     .catch(function (error) { console.log(error); })
 
-    var shasum = crypto.createHash('sha1')
-    var issuerHash = shasum.update(issuerDid).digest('hex');
+  var shasum = crypto.createHash('sha1')
+  var issuerHash = shasum.update(issuerDid).digest('hex');
 
   var transactionID = null;
   await cardanoblockchain.createAndSignTransaction(vcJwt, issuerHash, "8222462378", vaccine.code)
@@ -747,8 +744,14 @@ async function resolveMutation_addVaccinationCertificateS(parent, args) {
   var ipfsRes_QR = await ipfs.ipfsAddBuf(vp_qr);
   console.log(ipfsRes_QR);
 */
-  if (args.patientAuthKey)
-    console.log("PATIENT AUTH KEY: ", args.patientAuthKey);
+
+  try {
+    if (patient.cardano_address !== undefined && patient.cardano_address !== "None") {
+      var pid = await cardanoblockchain.mintNewNFT();
+      await cardanoblockchain.sendNFT(pid, patient.cardano_address);
+    }
+  }
+  catch (e) { console.log(e) }
 
   return vaccinationCertificate.save();
 }
@@ -781,7 +784,7 @@ async function resolveMutation_addVC(parent, args) {
   console.log("verifiableCredential.id: ", verifiableCredential.id);
 
   await cardanoblockchain.createAndSignTransaction("DIDComm Transmission...", "REDACTED", "8222462378", vaccine.code)
-    .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data)})
+    .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data) })
     .catch(function (error) { console.log(error); })
 
   const vaccinationCertificate = new VaccinationCertificate({
@@ -828,7 +831,7 @@ async function resolveMutation_addVCS(parent, args) {
   console.log("verifiableCredential.id: ", verifiableCredential.id);
 
   await cardanoblockchain.createAndSignTransaction("DIDComm Transmission...", "REDACTED", "8222462378", vaccine.code)
-    .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data)})
+    .then(function (data) { console.log("-----------------------------------------------------------"); console.log(data) })
     .catch(function (error) { console.log(error); })
 
   const vaccinationCertificate = new VaccinationCertificate({
@@ -938,14 +941,8 @@ async function resolveMutation_addVP(parent, args) {
 async function resolveMutation_mintNFT(parent, args) {
   console.log("MINT NFT");
 
-  var imgBuffer = await ipfs.generateImage();
-  console.log(imgBuffer)
-
-  var ipfsRes = await ipfs.ipfsAddBuf(imgBuffer);
-  console.log(ipfsRes);
-
-  var policy = await cardanoblockchain.mintNFT(ipfsRes.path);
-  cardanoblockchain.sendNFT(policy, "addr_test1qqe85ssrdvr98y6j2acdlexl22meam6p9pnxmcc6fg8xngh033pydfxc3e2n9pn58x0h06j8lq5mjag2kdqq8u4yxw5sk78ljm");
+  var policy = await cardanoblockchain.mintNewNFT();
+  cardanoblockchain.sendNFT(policy, args.address);
 }
 
 async function resolveQuery_login(parent, args) {
